@@ -123,31 +123,36 @@ def cd_hit_2d_kept(df_ref, df_query, tmp):
 # MAIN
 # --------------------------------------------------------------------------- #
 def main():
-    check_tools()
-    rng = random.Random(SEED)
+    check_tools() # stop early if CD-HIT isn't installed
+    rng = random.Random(SEED) # for a reproducable split
 
+    # Load both classes, tagging each with Class (and NegType for negatives).
     pos = pd.read_csv(POSITIVES_CSV); pos["Class"] = "positive"; pos["NegType"] = pd.NA
     neg = pd.read_csv(NEGATIVES_CSV); neg["Class"] = "negative"
     if "NegType" not in neg.columns:
         neg["NegType"] = pd.NA
     print(f"start: {len(pos)} positives, {len(neg)} negatives\n")
 
-    # integrity guard: drop any negative that is an exact copy of a positive
+    # Integrity guard: a sequence can't be both a positive and a negative, so
+    # drop any negative that exactly matches a positive (none expected here).
     posset = set(pos["Sequence"])
     before = len(neg)
     neg = neg[~neg["Sequence"].isin(posset)].reset_index(drop=True)
     print(f"integrity: removed {before - len(neg)} negatives identical to a "
           f"positive (exact contradictions)\n")
 
+    # Combine into one frame; the row index now serves as each sequence's ID.
     data = pd.concat([pos, neg], ignore_index=True)
 
-    with tempfile.TemporaryDirectory() as tmp:
+    with tempfile.TemporaryDirectory() as tmp: # CD-HIT scratch files, auto-deleted
         print("group-aware split (no test sequence >40% identical to train)")
-        data["Split"] = "train"
-        long = data[data.Length >= MIN_CDHIT_LEN]
-        short = data[data.Length < MIN_CDHIT_LEN]
+        data["Split"] = "train" # every sequence starts in train
+        long = data[data.Length >= MIN_CDHIT_LEN]  # CD-HIT handles these
+        short = data[data.Length < MIN_CDHIT_LEN]  # too short for 40% identity
 
-        # cluster the full long set (positives and negatives together)
+        # Cluster the long sequences (positives + negatives together) and assign
+        # whole clusters to test until TEST_FRACTION is reached. Keeping a cluster
+        # intact is what stops near-duplicates leaking across the train/test line.
         clusters = cd_hit_clusters(long, tmp)
         rng.shuffle(clusters)
         target = round(len(long) * TEST_FRACTION)
@@ -158,42 +163,49 @@ def main():
             test_ids += c; n += len(c)
         data.loc[test_ids, "Split"] = "test"
 
-        # short sequences: stratified random (40% not meaningful at this length)
+        # Short sequences: 40% identity is meaningless here, so just do a
+        # stratified random split per class instead.
         for cls in ("positive", "negative"):
             ids = list(short.index[short.Class == cls])
             rng.shuffle(ids)
             data.loc[ids[:round(len(ids) * TEST_FRACTION)], "Split"] = "test"
 
-        # CD-HIT clustering at 40% is heuristic; enforce no residual leakage by
-        # moving any long test sequence still >40% to a train sequence into train
+        # CD-HIT clustering is heuristic, so a few test sequences may still be
+        # >40% identical to a train one. Iteratively move any leaked sequences back
+        # to train (cd-hit-2d finds them) until none remain (max 15 passes).
         for _ in range(15):
             tr = data[(data.Split == "train") & (data.Length >= MIN_CDHIT_LEN)]
             te = data[(data.Split == "test") & (data.Length >= MIN_CDHIT_LEN)]
             if len(te) == 0:
                 break
-            leak = set(te.index) - cd_hit_2d_kept(tr, te, tmp)
+            leak = set(te.index) - cd_hit_2d_kept(tr, te, tmp) # test rows too close to train
             if not leak:
                 break
             data.loc[sorted(leak), "Split"] = "train"
 
+        # Verify leakage is actually zero before writing out.
         tr = data[(data.Split == "train") & (data.Length >= MIN_CDHIT_LEN)]
         te = data[(data.Split == "test") & (data.Length >= MIN_CDHIT_LEN)]
         residual = len(te) - len(cd_hit_2d_kept(tr, te, tmp)) if len(te) else 0
-        print(f"  split: {(data.Split=='train').sum()} train / "
-              f"{(data.Split=='test').sum()} test")
-        print(f"  verification: {residual} long test sequences >40% identical "
-              f"to a train sequence")
-        print("  (short sequences split randomly; 40% identity is not "
-              "meaningful below ~11 aa and exact duplicates are excluded)")
+        n_train = (data.Split == "train").sum()
+        n_test  = (data.Split == "test").sum()
 
+        # Final summary of the split and leakage check.
+        print(f"  split: {n_train} train / {n_test} test")
+        print(f"  leakage check: {residual} test sequences too close to train (want 0)")
+
+    # Write out the split to CSV, keeping only the relevant columns.
     out = data[["Sequence", "Label", "Length", "Class", "NegType", "Split"]]
     out.to_csv(OUTPUT_CSV, index=False)
-    pl, nl = data[data.Class=="positive"]["Length"], data[data.Class=="negative"]["Length"]
-    print(f"\nretained {len(out)} sequences "
-          f"({(out.Class=='positive').sum()} pos / {(out.Class=='negative').sum()} neg)")
-    print(f"length: positives mean {pl.mean():.2f} / negatives mean {nl.mean():.2f}")
-    print(f"wrote -> {OUTPUT_CSV}")
-    print(pd.crosstab(out["Split"], out["Class"]).to_string())
+
+    # Final summary of the split and leakage check.
+    n_pos = (out.Class == "positive").sum()
+    n_neg = (out.Class == "negative").sum()
+    pos_mean = data[data.Class == "positive"]["Length"].mean()
+    neg_mean = data[data.Class == "negative"]["Length"].mean()
+    print(f"Saved {len(out)} sequences ({n_pos} positives, {n_neg} negatives) to {OUTPUT_CSV}")
+    print(f"  mean length: positives {pos_mean:.1f}, negatives {neg_mean:.1f}")
+    print(pd.crosstab(out.Split, out.Class)) # .crosstab shows the counts of positives and negatives in train/test splits
 
 
 if __name__ == "__main__":
