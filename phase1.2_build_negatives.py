@@ -56,17 +56,32 @@ def load_soft_by_length(csv_path: str, exclude: set) -> dict:
     """Read DBAASP CSV -> {length: [unique standard sequences]} excluding any
     sequence in `exclude` (the positives)."""
     df = pd.read_csv(csv_path)
+    
+    # Locate the sequence column without assuming its exact spelling/case
+    # (DBAASP exports vary): match "SEQUENCE" ignoring case and surrounding spaces.
     col = next((c for c in df.columns if c.strip().upper() == "SEQUENCE"), None)
     if col is None:
-        sys.exit(f"No SEQUENCE column found in {csv_path}. Columns: {list(df.columns)}")
+        # No usable column = stop and print what columns were found, so the fix is obvious.
+        sys.exit(f"No sequence column found in {csv_path}. Columns: {list(df.columns)}")
+    
+    # Coerce to string and trim stray whitespace around each sequence.
     seqs = df[col].astype(str).str.strip()
+    
+    # seen = deduplicates sequences
+    # by_len = groups sequences by length, so the main loop can grab a soft
+    #          negative of an exact length on demand (negatives are length-matched).
     seen, by_len = set(), defaultdict(list)
+    
     for s in seqs:
+        # Skip duplicates and skip any sequence that is actually a positive (ADP)
+        # so a soft negative can never be identical to a positive.
         if s in seen or s in exclude:
             continue
-        if is_standard(s):           # drops lowercase D-aa, X/B/Z/U, symbols
+        
+        # Keep only standard 20-aa sequences.
+        if is_standard(s): # drops lowercase D-aa, X/B/Z/U, symbols
             seen.add(s)
-            by_len[len(s)].append(s)
+            by_len[len(s)].append(s) # bucket by length, e.g. {9: [...], 12: [...]}
     return by_len
 
 
