@@ -89,17 +89,33 @@ def load_soft_by_length(csv_path: str, exclude: set) -> dict:
 # HARD POOL  (Swiss-Prot via UniProt)
 # --------------------------------------------------------------------------- #
 def fetch_swissprot_pool(n_proteins: int) -> list:
+
+    # Build the GO exclusion clause: "go:0042593 OR go:0008286 OR go:0005179".
     not_go = " OR ".join(f"go:{g}" for g in EXCLUDE_GO)
+    
+    # UniProt search query:
+    #   reviewed:true     -> Swiss-Prot only (manually curated, high quality)
+    #   fragment:false    -> whole protein entries, not partial sequences
+    #   length:[MIN TO MAX] -> sane-sized proteins to excise fragments from
+    #   NOT (go terms)    -> drop glucose-homeostasis / insulin / hormone proteins,
+    #                        so a random fragment can't secretly be ADP-like
     query = (f"reviewed:true AND fragment:false "
              f"AND length:[{HARD_PROTEIN_LENMIN} TO {HARD_PROTEIN_LENMAX}] "
              f"NOT ({not_go})")
-    print(f"[hard] querying UniProt: {query}")
+    print(f"[hard] querying UniProt: {query}") # print the query for debugging purposes
+    
     proteins, url, first = [], "https://rest.uniprot.org/uniprotkb/search", True
-    params = {"query": query, "format": "fasta", "size": 500}
-    sess = requests.Session()
+    params = {"query": query, "format": "fasta", "size": 500} # # 500 results per page
+    sess = requests.Session() # reuse one connection
+    
+    # First call sends the query params, later calls follow UniProt's "next"
+    # link, which already has the params embedded in -> pass params only once.
     while url and len(proteins) < n_proteins:
         r = sess.get(url, params=params if first else None, timeout=60); first = False
-        r.raise_for_status()
+        r.raise_for_status() # stop on any HTTP error
+        
+        # Parse the FASTA page. A protein spans several lines, so accumulate the
+        # sequence lines in `cur` and cut it whenever the next ">" header starts.
         cur = []
         for line in io.StringIO(r.text):
             line = line.strip()
@@ -107,21 +123,28 @@ def fetch_swissprot_pool(n_proteins: int) -> list:
                 if cur: proteins.append("".join(cur).upper()); cur = []
             elif line:
                 cur.append(line)
-        if cur: proteins.append("".join(cur).upper())
+        if cur: proteins.append("".join(cur).upper()) # cut the last protein
         print(f"[hard]   pulled {len(proteins)} proteins so far")
-        url = r.links.get("next", {}).get("url"); time.sleep(0.2)
+        url = r.links.get("next", {}).get("url"); time.sleep(0.2) # dont have too many requests in a short time
     return [p for p in proteins[:n_proteins] if is_standard(p)]
 
 
 def excise_at_length(proteins: list, L: int, n: int, taken: set, rng) -> list:
     """Return up to n unique standard fragments of EXACT length L."""
+
+    # Only proteins longer than L can yield a length-L window.
     usable = [p for p in proteins if len(p) > L]
+    
+    # `cap` bounds the attempts so that it wont loop forever if no more fragmnents are available.
     out, tries, cap = [], 0, n * 200 + 500
     while len(out) < n and tries < cap:
-        tries += 1
-        prot = rng.choice(usable)
-        start = rng.randint(0, len(prot) - L)
-        frag = prot[start:start + L]
+        tries += 1 # start counting attempts
+        prot = rng.choice(usable) # random protein
+        start = rng.randint(0, len(prot) - L) # random window start
+        frag = prot[start:start + L] # slice an exact-length fragment
+
+        # Keep it only if it's standard-AA and globally unique (`taken` spans all
+        # lengths, so no fragment is ever reused as another negative).
         if is_standard(frag) and frag not in taken:
             taken.add(frag); out.append(frag)
     return out
