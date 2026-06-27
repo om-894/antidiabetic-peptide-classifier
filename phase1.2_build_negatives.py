@@ -1,68 +1,50 @@
 
 """
-=== Phase 1.2: Build Negatives ===
-Constructs the dual-negative class for the anti-diabetic peptide dataset.
+Phase 1.2: Build the dual-negative class (1:1 with the 966 ADP positives).
 
-Change from v1: the soft negatives now come from a DBAASP CSV export
-(antimicrobial peptides) instead of DRAMP/AVPdb, and matching is now EXACT —
-one negative is generated per positive at the same length, so the negative
-length distribution is identical to the positives by construction. At each
-length, soft (DBAASP) sequences are used up to availability; any shortfall is
-filled with hard negatives (Swiss-Prot fragments), which can be excised at any
-length. This is what lets the short lengths (where bioactive peptides barely
-exist) still get filled without leaking a length signal.
+Length-matched exactly: one negative per positive at the same length, so the
+negative length distribution mirrors the positives (no length signal to exploit).
+At each length, soft negatives are used first; any shortfall is filled with hard
+negatives (excisable at any length, so short lengths still fill).
 
-  Soft negatives  -> DBAASP CSV, SEQUENCE column, standard amino acids only.
-                     DBAASP writes D-amino acids in lowercase, so the
-                     standard-AA filter correctly drops chemically modified
-                     peptides.
-  Hard negatives  -> random fragments excised from Swiss-Prot proteins
-                     (UniProt REST API), GO terms for glucose homeostasis /
-                     insulin signalling / hormone activity excluded.
+  Soft  -> DBAASP antimicrobial peptides, standard amino acids only.
+  Hard  -> random Swiss-Prot fragments (UniProt REST API), excluding GO (Gene Ontology) terms for
+           glucose homeostasis / insulin signalling / hormone activity.
 
-INPUTS (adjust paths below if yours differ)
-  positives_ADP.csv   the 966-positive file
-  peptides.csv        the DBAASP export
-
-RUN
-  pip install requests pandas numpy
-  python build_negatives.py
+INPUTS   positives_ADP.csv (966 positives), peptides.csv (DBAASP export)
+RUN      pip install requests pandas numpy && python build_negatives.py
 """
 
+# Imports
 import io
 import random
 import sys
 import time
 from collections import defaultdict, Counter
-
 import numpy as np
 import pandas as pd
 
-try:
-    import requests
-except ImportError:
-    sys.exit("Please `pip install requests` first.")
 
 # --------------------------------------------------------------------------- #
-# CONFIG
+# DEFINE GLOBAL VARIABLES
 # --------------------------------------------------------------------------- #
 POSITIVES_CSV = "data/positives_ADP.csv"
 SOFT_CSV      = "data/peptides.csv"          # DBAASP export
 OUTPUT_CSV    = "data/negatives.csv"
 SEED          = 42
 
-# Use every available soft peptide (hard backfills the rest). Set to a float
-# like 0.50 to cap soft at that fraction of the total instead.
-SOFT_CAP_FRACTION = None
+SOFT_CAP_FRACTION = None # use all available DBAASP soft negatives. hard negatives fill the rest.
 
-EXCLUDE_GO          = ["0042593", "0008286", "0005179"]
+EXCLUDE_GO          = ["0042593", "0008286", "0005179"] # GO ids for glucose homeostasis, insulin signaling, hormone activity
+
+# Hard negative parameters
 HARD_POOL_SIZE      = 4000
 HARD_PROTEIN_LENMIN = 60
 HARD_PROTEIN_LENMAX = 2000
 
-STANDARD_AA = set("ACDEFGHIKLMNPQRSTVWY")
-
-
+# keep only sequences of the 20 standard amino acids 
+# this drops X/B/Z/U and DBAASP's lowercase D-amino-acid (modified) peptides.
+STANDARD_AA = set("ACDEFGHIKLMNPQRSTVWY") # 
 def is_standard(seq: str) -> bool:
     return len(seq) > 0 and set(seq).issubset(STANDARD_AA)
 
