@@ -124,7 +124,6 @@ def fetch_swissprot_pool(n_proteins: int) -> list:
             elif line:
                 cur.append(line)
         if cur: proteins.append("".join(cur).upper()) # cut the last protein
-        print(f"[hard]   pulled {len(proteins)} proteins so far")
         url = r.links.get("next", {}).get("url"); time.sleep(0.2) # dont have too many requests in a short time
     return [p for p in proteins[:n_proteins] if is_standard(p)]
 
@@ -154,37 +153,44 @@ def excise_at_length(proteins: list, L: int, n: int, taken: set, rng) -> list:
 # MAIN
 # --------------------------------------------------------------------------- #
 def main():
-    rng = random.Random(SEED); np.random.seed(SEED)
+    rng = random.Random(SEED); np.random.seed(SEED) # seed both RNGs so its reproducible
 
     pos = pd.read_csv(POSITIVES_CSV)
-    pos_seqs = set(pos["Sequence"].astype(str))
+    
+    pos_seqs = set(pos["Sequence"].astype(str)) # positives for exclusion
+    
+    # How many positives exist at each length. build the same number of negatives at each length for exact length matching.
     pos_len_counts = Counter(pos["Length"])
     n_total = len(pos)
 
+    # Soft pool grouped by length (positives already excluded inside the loader).
     soft_by_len = load_soft_by_length(SOFT_CSV, pos_seqs)
     for L in soft_by_len:                       # shuffle for reproducible draws
         rng.shuffle(soft_by_len[L])
-    print(f"[soft] DBAASP usable: {sum(len(v) for v in soft_by_len.values())} "
-          f"unique standard sequences\n")
 
-    # Optional global soft cap
+    # Per-length cap on how many soft negatives to use. By default = all available
+    # only trimmed if SOFT_CAP_FRACTION limits soft to a fraction of the total.
     soft_budget = {L: len(v) for L, v in soft_by_len.items()}
     if SOFT_CAP_FRACTION is not None:
         cap = int(round(n_total * SOFT_CAP_FRACTION))
         running = 0
         for L in sorted(soft_budget):
             take = min(soft_budget[L], pos_len_counts.get(L, 0))
-            if running + take > cap:
+            if running + take > cap: # stop adding soft once the cap is hit
                 take = max(0, cap - running)
             soft_budget[L] = take; running += take
 
-    # Exact length matching: one negative per positive, same length
+    # Hard-negative source proteins (fetched once, reused for every length).
     proteins = fetch_swissprot_pool(HARD_POOL_SIZE)
     print(f"[hard] pool: {len(proteins)} standard proteins\n")
 
+    # `taken` seeds with the positives so no negative can equal a positive and it
+    # grows as we pick negatives meaning that every negative stays globally unique.
     taken, rows = set(pos_seqs), []
     soft_n = hard_n = 0
     for L, need in sorted(pos_len_counts.items()):
+
+        # Use soft negatives first, up to (need / budget / what actually exists).
         avail = min(need, soft_budget.get(L, 0), len(soft_by_len.get(L, [])))
         chosen_soft = soft_by_len.get(L, [])[:avail]
         for s in chosen_soft:
@@ -192,24 +198,24 @@ def main():
         rows += [{"Sequence": s, "Label": 0, "Length": L, "NegType": "soft"} for s in chosen_soft]
         soft_n += len(chosen_soft)
 
+        # Backfill the shortfall with hard negatives (excisable at any length, so
+        # short lengths where soft peptides are scarce still get filled).
         need_hard = need - len(chosen_soft)
         hard_frags = excise_at_length(proteins, L, need_hard, taken, rng)
         rows += [{"Sequence": s, "Label": 0, "Length": L, "NegType": "hard"} for s in hard_frags]
         hard_n += len(hard_frags)
-        if len(hard_frags) < need_hard:
+
+        if len(hard_frags) < need_hard: # if couldn't fully fill this length
             print(f"[warn] length {L}: wanted {need_hard} hard, got {len(hard_frags)}")
 
+    # Final safety deduplication, then write out to csv
     neg = pd.DataFrame(rows).drop_duplicates("Sequence").reset_index(drop=True)
     neg.to_csv(OUTPUT_CSV, index=False)
 
-    print(f"\nwrote {len(neg)} negatives -> {OUTPUT_CSV}")
-    print(f"  soft (DBAASP): {soft_n}  ({100*soft_n/len(neg):.0f}%)")
-    print(f"  hard (UniProt): {hard_n}  ({100*hard_n/len(neg):.0f}%)")
-    print("\nlength match (should mirror positives exactly):")
-    print("  positives mean {:.2f} / negatives mean {:.2f}".format(
-        pos["Length"].mean(), neg["Length"].mean()))
-    print("\nNOTE: >40% identity removal vs positives (CD-HIT) is the next, "
-          "separate Phase-1 step.")
+    print(f"Saved {len(neg)} negatives to {OUTPUT_CSV}")
+    print(f"  soft (DBAASP):  {soft_n} ({soft_n/len(neg):.0%})")
+    print(f"  hard (UniProt): {hard_n} ({hard_n/len(neg):.0%})")
+    print(f"  mean length: positives {pos['Length'].mean():.1f}, negatives {neg['Length'].mean():.1f}")
 
 
 if __name__ == "__main__":
