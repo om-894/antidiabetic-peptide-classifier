@@ -1,0 +1,196 @@
+
+"""
+=== Phase 1.2: Build Negatives ===
+Constructs the dual-negative class for the anti-diabetic peptide dataset.
+
+Change from v1: the soft negatives now come from a DBAASP CSV export
+(antimicrobial peptides) instead of DRAMP/AVPdb, and matching is now EXACT —
+one negative is generated per positive at the same length, so the negative
+length distribution is identical to the positives by construction. At each
+length, soft (DBAASP) sequences are used up to availability; any shortfall is
+filled with hard negatives (Swiss-Prot fragments), which can be excised at any
+length. This is what lets the short lengths (where bioactive peptides barely
+exist) still get filled without leaking a length signal.
+
+  Soft negatives  -> DBAASP CSV, SEQUENCE column, standard amino acids only.
+                     DBAASP writes D-amino acids in lowercase, so the
+                     standard-AA filter correctly drops chemically modified
+                     peptides.
+  Hard negatives  -> random fragments excised from Swiss-Prot proteins
+                     (UniProt REST API), GO terms for glucose homeostasis /
+                     insulin signalling / hormone activity excluded.
+
+INPUTS (adjust paths below if yours differ)
+  positives_ADP.csv   the 966-positive file
+  peptides.csv        the DBAASP export
+
+RUN
+  pip install requests pandas numpy
+  python build_negatives.py
+"""
+
+import io
+import random
+import sys
+import time
+from collections import defaultdict, Counter
+
+import numpy as np
+import pandas as pd
+
+try:
+    import requests
+except ImportError:
+    sys.exit("Please `pip install requests` first.")
+
+# --------------------------------------------------------------------------- #
+# CONFIG
+# --------------------------------------------------------------------------- #
+POSITIVES_CSV = "data/positives_ADP.csv"
+SOFT_CSV      = "data/peptides.csv"          # DBAASP export
+OUTPUT_CSV    = "data/negatives.csv"
+SEED          = 42
+
+# Use every available soft peptide (hard backfills the rest). Set to a float
+# like 0.50 to cap soft at that fraction of the total instead.
+SOFT_CAP_FRACTION = None
+
+EXCLUDE_GO          = ["0042593", "0008286", "0005179"]
+HARD_POOL_SIZE      = 4000
+HARD_PROTEIN_LENMIN = 60
+HARD_PROTEIN_LENMAX = 2000
+
+STANDARD_AA = set("ACDEFGHIKLMNPQRSTVWY")
+
+
+def is_standard(seq: str) -> bool:
+    return len(seq) > 0 and set(seq).issubset(STANDARD_AA)
+
+
+# --------------------------------------------------------------------------- #
+# SOFT POOL  (DBAASP)
+# --------------------------------------------------------------------------- #
+def load_soft_by_length(csv_path: str, exclude: set) -> dict:
+    """Read DBAASP CSV -> {length: [unique standard sequences]} excluding any
+    sequence in `exclude` (the positives)."""
+    df = pd.read_csv(csv_path)
+    col = next((c for c in df.columns if c.strip().upper() == "SEQUENCE"), None)
+    if col is None:
+        sys.exit(f"No SEQUENCE column found in {csv_path}. Columns: {list(df.columns)}")
+    seqs = df[col].astype(str).str.strip()
+    seen, by_len = set(), defaultdict(list)
+    for s in seqs:
+        if s in seen or s in exclude:
+            continue
+        if is_standard(s):           # drops lowercase D-aa, X/B/Z/U, symbols
+            seen.add(s)
+            by_len[len(s)].append(s)
+    return by_len
+
+
+# --------------------------------------------------------------------------- #
+# HARD POOL  (Swiss-Prot via UniProt)
+# --------------------------------------------------------------------------- #
+def fetch_swissprot_pool(n_proteins: int) -> list:
+    not_go = " OR ".join(f"go:{g}" for g in EXCLUDE_GO)
+    query = (f"reviewed:true AND fragment:false "
+             f"AND length:[{HARD_PROTEIN_LENMIN} TO {HARD_PROTEIN_LENMAX}] "
+             f"NOT ({not_go})")
+    print(f"[hard] querying UniProt: {query}")
+    proteins, url, first = [], "https://rest.uniprot.org/uniprotkb/search", True
+    params = {"query": query, "format": "fasta", "size": 500}
+    sess = requests.Session()
+    while url and len(proteins) < n_proteins:
+        r = sess.get(url, params=params if first else None, timeout=60); first = False
+        r.raise_for_status()
+        cur = []
+        for line in io.StringIO(r.text):
+            line = line.strip()
+            if line.startswith(">"):
+                if cur: proteins.append("".join(cur).upper()); cur = []
+            elif line:
+                cur.append(line)
+        if cur: proteins.append("".join(cur).upper())
+        print(f"[hard]   pulled {len(proteins)} proteins so far")
+        url = r.links.get("next", {}).get("url"); time.sleep(0.2)
+    return [p for p in proteins[:n_proteins] if is_standard(p)]
+
+
+def excise_at_length(proteins: list, L: int, n: int, taken: set, rng) -> list:
+    """Return up to n unique standard fragments of EXACT length L."""
+    usable = [p for p in proteins if len(p) > L]
+    out, tries, cap = [], 0, n * 200 + 500
+    while len(out) < n and tries < cap:
+        tries += 1
+        prot = rng.choice(usable)
+        start = rng.randint(0, len(prot) - L)
+        frag = prot[start:start + L]
+        if is_standard(frag) and frag not in taken:
+            taken.add(frag); out.append(frag)
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# MAIN
+# --------------------------------------------------------------------------- #
+def main():
+    rng = random.Random(SEED); np.random.seed(SEED)
+
+    pos = pd.read_csv(POSITIVES_CSV)
+    pos_seqs = set(pos["Sequence"].astype(str))
+    pos_len_counts = Counter(pos["Length"])
+    n_total = len(pos)
+
+    soft_by_len = load_soft_by_length(SOFT_CSV, pos_seqs)
+    for L in soft_by_len:                       # shuffle for reproducible draws
+        rng.shuffle(soft_by_len[L])
+    print(f"[soft] DBAASP usable: {sum(len(v) for v in soft_by_len.values())} "
+          f"unique standard sequences\n")
+
+    # Optional global soft cap
+    soft_budget = {L: len(v) for L, v in soft_by_len.items()}
+    if SOFT_CAP_FRACTION is not None:
+        cap = int(round(n_total * SOFT_CAP_FRACTION))
+        running = 0
+        for L in sorted(soft_budget):
+            take = min(soft_budget[L], pos_len_counts.get(L, 0))
+            if running + take > cap:
+                take = max(0, cap - running)
+            soft_budget[L] = take; running += take
+
+    # Exact length matching: one negative per positive, same length
+    proteins = fetch_swissprot_pool(HARD_POOL_SIZE)
+    print(f"[hard] pool: {len(proteins)} standard proteins\n")
+
+    taken, rows = set(pos_seqs), []
+    soft_n = hard_n = 0
+    for L, need in sorted(pos_len_counts.items()):
+        avail = min(need, soft_budget.get(L, 0), len(soft_by_len.get(L, [])))
+        chosen_soft = soft_by_len.get(L, [])[:avail]
+        for s in chosen_soft:
+            taken.add(s)
+        rows += [{"Sequence": s, "Label": 0, "Length": L, "NegType": "soft"} for s in chosen_soft]
+        soft_n += len(chosen_soft)
+
+        need_hard = need - len(chosen_soft)
+        hard_frags = excise_at_length(proteins, L, need_hard, taken, rng)
+        rows += [{"Sequence": s, "Label": 0, "Length": L, "NegType": "hard"} for s in hard_frags]
+        hard_n += len(hard_frags)
+        if len(hard_frags) < need_hard:
+            print(f"[warn] length {L}: wanted {need_hard} hard, got {len(hard_frags)}")
+
+    neg = pd.DataFrame(rows).drop_duplicates("Sequence").reset_index(drop=True)
+    neg.to_csv(OUTPUT_CSV, index=False)
+
+    print(f"\nwrote {len(neg)} negatives -> {OUTPUT_CSV}")
+    print(f"  soft (DBAASP): {soft_n}  ({100*soft_n/len(neg):.0f}%)")
+    print(f"  hard (UniProt): {hard_n}  ({100*hard_n/len(neg):.0f}%)")
+    print("\nlength match (should mirror positives exactly):")
+    print("  positives mean {:.2f} / negatives mean {:.2f}".format(
+        pos["Length"].mean(), neg["Length"].mean()))
+    print("\nNOTE: >40% identity removal vs positives (CD-HIT) is the next, "
+          "separate Phase-1 step.")
+
+
+if __name__ == "__main__":
+    main()
