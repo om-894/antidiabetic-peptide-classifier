@@ -3,9 +3,11 @@
 Phase 1.3: Leakage-safe train/test split (group-aware, keeps all data).
 
 CD-HIT clusters the full positive+negative set at 40% identity; whole clusters
-go to train OR test, so no test sequence is >40% identical to any train one.
+go to train or test, so no test sequence is >40% identical to any train one.
 Nothing is deleted for redundancy — near-duplicate pairs fall in the same split,
-and within train they're useful hard cases.
+and within train they're useful hard cases. (For scale: conventional 40%
+redundancy reduction would delete 782/1932 sequences, ~40% of the data, since
+many ADPs are overlapping insulin-derived fragments — so keeping all data matters.)
 
 Only deletion: exact contradictions (a sequence appearing as both positive and
 negative) — an integrity guard that removes nothing here.
