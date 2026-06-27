@@ -23,15 +23,21 @@ import time
 from collections import defaultdict, Counter
 import numpy as np
 import pandas as pd
+import requests
 
 
 # --------------------------------------------------------------------------- #
 # DEFINE GLOBAL VARIABLES
 # --------------------------------------------------------------------------- #
 POSITIVES_CSV = "data/positives_ADP.csv"
-SOFT_CSV      = "data/peptides.csv"          # DBAASP export
 OUTPUT_CSV    = "data/negatives.csv"
 SEED          = 42
+
+# Soft-negative source: antimicrobial peptides exported as CSV from the DBAASP
+# database (https://dbaasp.org/). Downloaded manually. broad search for monomer peptides — set peptide type to Monomer
+# The SEQUENCE column is used; is_standard() drops DBAASP's lowercase
+# D-amino-acid and other non-standard entries.
+SOFT_CSV      = "data/peptides.csv"
 
 SOFT_CAP_FRACTION = None # use all available DBAASP soft negatives. hard negatives fill the rest.
 
