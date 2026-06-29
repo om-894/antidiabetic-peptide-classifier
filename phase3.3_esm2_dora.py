@@ -43,8 +43,8 @@ from peft import LoraConfig, TaskType, get_peft_model
 # the same script at a different dataset/outputs without editing the code.
 DATA = os.environ.get("DATA", "data/dataset_split.csv")
 MODEL_ID = "facebook/esm2_t33_650M_UR50D"       # ESM-2, 650M params
-OUT_NPZ = os.environ.get("OUT_NPZ", "esm2_dora_predictions.npz")
-OUT_ADAPTER = os.environ.get("OUT_ADAPTER", "esm2_dora_adapter")
+OUT_NPZ = os.environ.get("OUT_NPZ", "predictions/esm2_dora_predictions.npz")
+OUT_ADAPTER = os.environ.get("OUT_ADAPTER", "models/esm2_dora_adapter")
 
 # Ablation mode: skip the 5-fold OOF (only the test prediction is needed), so the
 # Basith-negative run is a single fine-tune. SKIP_OOF=1 enables it.
@@ -223,6 +223,8 @@ def free(model):
 # --------------------------------------------------------------------------- #
 def main():
     set_seed(SEED)
+    os.makedirs("predictions", exist_ok=True)
+    os.makedirs("models", exist_ok=True)
     print(f"device: {device} | bf16: {USE_BF16} | smoke_test: {SMOKE_TEST}")
 
     # Load the split and pull out raw sequences and integer labels for each side.
