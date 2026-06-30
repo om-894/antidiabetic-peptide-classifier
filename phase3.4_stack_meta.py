@@ -15,7 +15,7 @@ Sensitivity variants confirm the conclusion isn't config-specific:
   no-cnn drop the weak CNN
 
 Method: train on the out-of-fold probabilities (honest, not in-sample).
-stack_oof = cross_val_predict over the SAME StratifiedKFold(5, seed=42);
+stack_oof = cross_val_predict over the same StratifiedKFold(5, seed=42);
 stack_test = LR fit on all OOF rows, applied to the base test probabilities.
 Standardisation sits inside a Pipeline so it re-fits per fold (no leakage).
 

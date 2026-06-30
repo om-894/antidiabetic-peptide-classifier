@@ -1,12 +1,12 @@
 
 """
-Phase 3 tuning: Optuna (Bayesian/TPE) with NESTED cross-validation for the three
-local base learners (XGBoost, RF, 1D-CNN) on the fused vector. ESM-2 is NOT tuned
+Phase 3 tuning: Optuna (Bayesian/TPE) with nested cross-validation for the three
+local base learners (XGBoost, RF, 1D-CNN) on the fused vector. ESM-2 is not tuned
 (full nested tuning of a 650M model is expensive and low-ROI; it keeps its DoRA config).
 
 Nested CV: outer folds give an unbiased OOF; an inner CV inside each outer-training
 split picks the hyperparameters without seeing that fold, so the OOF isn't optimistic
-about the tuning. The outer folds are the SAME StratifiedKFold(5, seed=42) as the other
+about the tuning. The outer folds are the same StratifiedKFold(5, seed=42) as the other
 learners, so the tuned OOF/test stay row-aligned for the meta-learner.
 
 Per model: outer 5-fold -> tuned *_oof; final tune on all train -> tuned *_test + model.
