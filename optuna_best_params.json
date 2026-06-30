@@ -1,0 +1,28 @@
+{
+  "xgb": {
+    "n_estimators": 600,
+    "max_depth": 6,
+    "learning_rate": 0.025018818220410233,
+    "subsample": 0.8653325266372627,
+    "colsample_bytree": 0.9077411245011531,
+    "min_child_weight": 3,
+    "gamma": 0.07510605812843663,
+    "reg_lambda": 0.001920567950334051
+  },
+  "rf": {
+    "n_estimators": 500,
+    "max_depth": 10,
+    "max_features": 0.3,
+    "min_samples_leaf": 1,
+    "min_samples_split": 3
+  },
+  "cnn": {
+    "ch1": 64,
+    "ch2": 32,
+    "k1": 9,
+    "p": 0.2071847502459278,
+    "lr": 0.0012231822374746588,
+    "weight_decay": 1.3831805735878796e-05,
+    "batch": 64
+  }
+}
