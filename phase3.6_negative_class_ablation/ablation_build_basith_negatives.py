@@ -1,118 +1,103 @@
-#!/usr/bin/env python3
+
 """
-ablation_build_basith_negatives.py
-==================================
-Negative-class ablation, step 1: build Basith et al.'s conventional negative
-pool (AntiDMPpred two-layer datasets) as a comparator for our dual-negative
-class. All other components (the 966 positives, features, architecture,
-hyperparameters) are held constant in the ablation; only the negatives change.
+Negative-class ablation, step 1: build Basith et al.'s (ADP-Fuse, 2023) conventional
+non-ADP negatives as a comparator for the dual-negative class. Only the negatives
+change; positives/features/architecture/hyperparameters stay constant.
 
-Basith's negatives are the union of the negative sequences across his four
-files (Layer1_training, L1_Ind, Layer2_training, L2_Ind):
-  Layer 1 negatives ~ antimicrobial / cell-penetrating / protein fragments
-  Layer 2 negatives ~ short bioactive (ACE/DPP-IV-like) peptides
-This matches the outline's description of Basith's pool (antimicrobial +
-anticancer + antihypertensive, no hard negatives, no GO filtering).
+ADP-Fuse is a two-layer model: Layer 1 = ADP vs non-ADP, Layer 2 = type-1 vs type-2
+diabetes. Only Layer 1's negatives are true non-ADPs (random peptides + antimicrobial/
+anticancer/antihypertensive, reduced with CD-HIT 0.6). Layer 2's "negatives" are T2D
+ADPs, so they are excluded. Pool = negatives from Layer1_training + L1_Ind.
 
-FINDING reported here: how many of Basith's negatives are annotated as ADPs
-(positives) in our consolidated Xie et al. set — i.e. label contradictions that
-contaminate his decision boundary. These are removed before sampling (they
-cannot serve as negatives against the same positives), but the rate is a
-standalone Aim-1 result.
-
-OUTPUTS
-  data/basith_negatives_pool.csv   full cleaned pool (Sequence, Length, Sources)
-  data/basith_negatives.csv        966 sampled, matching data/negatives.csv schema
-                                   (Sequence, Label=0, Length, NegType="basith")
+OUTPUTS  basith_negatives_pool.csv  (full cleaned pool, in this folder)
+         basith_negatives.csv       (966 sampled, negatives.csv schema)
 """
 
+# Imports
 import random
 from collections import defaultdict
-
 import pandas as pd
 
-RAW = "data/basith_raw/"
-FILES = ["Layer1_training.txt", "L1_Ind.txt", "Layer2_training.txt", "L2_Ind.txt"]
-SEED = 42
-STANDARD_AA = set("ACDEFGHIKLMNPQRSTVWY")
+
+import os
+HERE = os.path.dirname(os.path.abspath(__file__))          # this ablation folder
+RAW  = os.path.join(HERE, "basith_raw")                    # inputs live beside this script
+DATASET_SPLIT = os.path.join(HERE, "..", "data", "dataset_split.csv")  # main pipeline split
+POOL_OUT = os.path.join(HERE, "basith_negatives_pool.csv") # outputs stay in this folder
+NEG_OUT  = os.path.join(HERE, "basith_negatives.csv")
+FILES = ["Layer1_training.txt", "L1_Ind.txt"]    # Layer 1 ONLY = the true non-ADPs
+SEED = 42                                         # reproducible sampling
+STANDARD_AA = set("ACDEFGHIKLMNPQRSTVWY")         # the 20 standard amino acids
 
 
 def parse_fasta(path):
-    pos, neg, cur = [], [], None
+    # Read a FASTA-style file and return only the negative sequences. Each ">"
+    # header says whether the lines below it are a Positive or a Negative; we
+    # track that with `cur` and keep the sequence only when cur == "neg".
+    neg, cur = [], None
     for line in open(path):
         line = line.strip()
         if not line:
             continue
         if line.startswith(">"):
             cur = "pos" if "Positive" in line else "neg"
-        else:
-            (pos if cur == "pos" else neg).append(line)
-    return pos, neg
+        elif cur == "neg":
+            neg.append(line)
+    return neg
 
 
 def is_standard(s):
+    # Keep only sequences made of the 20 standard amino acids (drops anything
+    # with non-standard residues like X/B/Z/U).
     return len(s) > 0 and set(s).issubset(STANDARD_AA)
 
 
 def main():
-    # collect unique negatives, tracking which file(s) each came from
+    # Collect the Layer-1 negatives across both files. `sources` records which
+    # file(s) each sequence came from (provenance); the keys form the unique set.
     sources = defaultdict(set)
     for f in FILES:
-        _, neg = parse_fasta(RAW + f)
-        tag = "L1" if f.startswith(("Layer1", "L1")) else "L2"
-        for s in neg:
-            sources[s].add(tag)
-    neg_all = set(sources)
-    print(f"Basith negatives (unique across 4 files): {len(neg_all)}")
+        for s in parse_fasta(os.path.join(RAW, f)):
+            sources[s].add(f.replace(".txt", ""))
+    neg_all = {s for s in sources if is_standard(s)}     # unique, standard-AA negatives
+    print(f"Basith Layer-1 non-ADP negatives (unique, standard AA): {len(neg_all)}")
 
-    non_std = {s for s in neg_all if not is_standard(s)}
-    neg_all -= non_std
-    print(f"  dropped {len(non_std)} non-standard-AA sequences -> {len(neg_all)}")
-
-    # cross-reference against our consolidated dataset
-    ds = pd.read_csv("data/dataset_split.csv")
+    # Integrity guard: a sequence can't be both a negative and one of my
+    # positives/negatives (that would be a label contradiction). Remove any
+    # overlaps. (With Layer-1-only, the positive overlap is now 0.)
+    ds = pd.read_csv(DATASET_SPLIT)
     user_pos = set(ds[ds.Label == 1]["Sequence"])
     user_neg = set(ds[ds.Label == 0]["Sequence"])
+    print(f"  removed {len(neg_all & user_pos)} matching current positives, "
+          f"{len(neg_all & user_neg)} matching our negatives")
+    clean = sorted(neg_all - user_pos - user_neg)        # sorted -> deterministic order
 
-    contradictions = neg_all & user_pos
-    print(f"\n*** FINDING: {len(contradictions)} of Basith's negatives are ADPs "
-          f"(positives) in our set ***")
-    print(f"    = {100 * len(contradictions) / len(neg_all):.1f}% of his negative pool, "
-          f"{100 * len(contradictions) / len(user_pos):.1f}% relative to our 966 positives")
-    overlap_neg = neg_all & user_neg
-    print(f"    (overlap with OUR negatives: {len(overlap_neg)} — essentially none)")
-
-    clean = neg_all - user_pos - user_neg
-    print(f"\nclean Basith pool (contradictions + our-neg overlap removed): {len(clean)}")
-
-    # sample 966 to match the positives 1:1 (Basith did NOT length-match — faithful)
+    # Sample 966 negatives (1:1 with the positives). Shuffle with a fixed seed so
+    # the draw is random but reproducible. NO length-matching here — that is
+    # faithful to Basith (the resulting length mismatch is a discussion point).
     n_target = (ds.Label == 1).sum()
     rng = random.Random(SEED)
-    clean_sorted = sorted(clean)
-    rng.shuffle(clean_sorted)
-    sample = clean_sorted[:n_target]
-    print(f"sampled {len(sample)} negatives (target {n_target}, 1:1 with positives)")
+    rng.shuffle(clean)
+    sample = clean[:n_target]
+    print(f"clean pool {len(clean)} -> sampled {len(sample)} (1:1 with positives)")
 
-    # save the full cleaned pool (for reference / sensitivity)
-    pool = pd.DataFrame({"Sequence": clean_sorted,
-                         "Length": [len(s) for s in clean_sorted],
-                         "Sources": ["|".join(sorted(sources[s])) for s in clean_sorted]})
-    pool.to_csv("data/basith_negatives_pool.csv", index=False)
-
-    # save the 966 sample in negatives.csv schema
+    # Save the full cleaned pool (for reference) and the 966 samples. The sample
+    # uses the same schema as data/negatives.csv (Label=0, NegType tag) so it can
+    # drop straight into the split step.
+    pd.DataFrame({"Sequence": clean,
+                  "Length": [len(s) for s in clean],
+                  "Sources": ["|".join(sorted(sources[s])) for s in clean]}
+                 ).to_csv(POOL_OUT, index=False)
     neg = pd.DataFrame({"Sequence": sample, "Label": 0,
                         "Length": [len(s) for s in sample], "NegType": "basith"})
-    neg.to_csv("data/basith_negatives.csv", index=False)
+    neg.to_csv(NEG_OUT, index=False)
 
-    # length comparison vs our negatives and positives
+    # Length sanity print: shows Basith's negatives are longer than the positives
+    # (the length confound), since Basith did not length-match.
     pos_len = ds[ds.Label == 1]["Length"]
-    ourneg_len = ds[ds.Label == 0]["Length"]
-    bl = neg["Length"]
     print(f"\nlength (mean): positives {pos_len.mean():.1f} | "
-          f"our negatives {ourneg_len.mean():.1f} | Basith negatives {bl.mean():.1f}")
-    print(f"length (median): positives {pos_len.median():.0f} | "
-          f"our negatives {ourneg_len.median():.0f} | Basith negatives {bl.median():.0f}")
-    print("\nsaved -> data/basith_negatives_pool.csv, data/basith_negatives.csv")
+          f"Basith negatives {neg.Length.mean():.1f}")
+    print("saved -> " + POOL_OUT + ", " + NEG_OUT)
 
 
 if __name__ == "__main__":
