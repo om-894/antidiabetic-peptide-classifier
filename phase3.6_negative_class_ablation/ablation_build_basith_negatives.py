@@ -25,7 +25,7 @@ RAW  = os.path.join(HERE, "basith_raw")                    # inputs live beside 
 DATASET_SPLIT = os.path.join(HERE, "..", "data", "dataset_split.csv")  # main pipeline split
 POOL_OUT = os.path.join(HERE, "basith_negatives_pool.csv") # outputs stay in this folder
 NEG_OUT  = os.path.join(HERE, "basith_negatives.csv")
-FILES = ["Layer1_training.txt", "L1_Ind.txt"]    # Layer 1 ONLY = the true non-ADPs
+FILES = ["Layer1_training.txt", "L1_Ind.txt"]    # Layer 1 only = the true non-ADPs
 SEED = 42                                         # reproducible sampling
 STANDARD_AA = set("ACDEFGHIKLMNPQRSTVWY")         # the 20 standard amino acids
 
@@ -47,7 +47,7 @@ def parse_fasta(path):
 
 
 def is_standard(s):
-    # Keep only sequences made of the 20 standard amino acids (drops anything
+    # Keep only sequences made of the 20 standard AA (drops anything
     # with non-standard residues like X/B/Z/U).
     return len(s) > 0 and set(s).issubset(STANDARD_AA)
 
@@ -73,7 +73,7 @@ def main():
     clean = sorted(neg_all - user_pos - user_neg)        # sorted -> deterministic order
 
     # Sample 966 negatives (1:1 with the positives). Shuffle with a fixed seed so
-    # the draw is random but reproducible. NO length-matching here — that is
+    # the draw is random but reproducible. no length-matching here — that is
     # faithful to Basith (the resulting length mismatch is a discussion point).
     n_target = (ds.Label == 1).sum()
     rng = random.Random(SEED)
