@@ -110,8 +110,7 @@ def main():
     print(f"\nwrote {OUT}  ({len(out)} rows)")
     print(pd.crosstab(out["Split"], out["Label"]).to_string())  # train/test x pos/neg counts
     print(f"\nBasith train-neg length mean {neg_train.Length.mean():.1f} "
-          f"vs train-pos {pos_train.Length.mean():.1f}  "
-          f"(length confound: Basith negs are longer)")
+          f"vs train-pos {pos_train.Length.mean():.1f}")
 
 
 if __name__ == "__main__":
