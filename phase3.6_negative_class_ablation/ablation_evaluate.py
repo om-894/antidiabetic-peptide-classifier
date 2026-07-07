@@ -66,7 +66,7 @@ print(f"\nHEADLINE: false-positive rate on the {hard.sum()} HARD negatives - "
 # test set: 93 positives | 45 hard neg | 40 soft neg
 
 # model           AUC    ACC    MCC  recall  FPR_hard  FPR_soft
-# dual-neg      0.877  0.815  0.633   0.892     0.467     0.050
+# my dual-neg   0.877  0.815  0.633   0.892     0.467     0.050
 # basith        0.658  0.612  0.237   0.860     0.933     0.350
 
 # HEADLINE: false-positive rate on the 45 HARD negatives - dual-neg 46.7% vs Basith 93.3%
