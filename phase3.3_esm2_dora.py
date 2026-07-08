@@ -51,7 +51,7 @@ OUT_ADAPTER = os.environ.get("OUT_ADAPTER", "models/esm2_dora_adapter")
 SKIP_OOF = os.environ.get("SKIP_OOF", "0") == "1"
 
 # reproducibility and OOF scheme (must match the trees/CNN for stacking)
-SEED = 42
+SEED = int(os.environ.get("SEED", "42"))
 FOLDS = 5
 
 # tokenisation / training
