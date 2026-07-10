@@ -47,7 +47,7 @@ MODEL_ID   = "facebook/esm2_t33_650M_UR50D" # ESM-2 650M (same as Phase 2/3)
 ADAPTER    = "models/esm2_dora_adapter" # DoRA adapter saved in Phase 3.3
 BATCH_SIZE = 16
 MAX_LEN    = 64 # matches Phase 3.3 tokenisation
-DEVICE = os.environ.get("DEVICE", "auto")   # I was running on mac but too slow, so now can run on viking.
+DEVICE = os.environ.get("DEVICE", "auto")   # "auto" -> cuda on Viking
 
 
 def pick_device():
