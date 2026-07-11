@@ -78,10 +78,10 @@ def descriptors(seq):
 def main():
     # ESM-2 outputs from 5.2 (embeddings + DoRA probabilities), all aligned.
     z = np.load(ESM2_NPZ, allow_pickle=True)
-    X_emb    = z["X_emb"].astype(np.float32) # [N, 1280]
+    X_emb = z["X_emb"].astype(np.float32) # [N, 1280]
     esm_prob = z["esm_prob"].astype(float) # [N]
-    pid      = [str(x) for x in z["peptide_id"]]
-    seqs     = [str(s) for s in z["sequence"]]
+    pid = [str(x) for x in z["peptide_id"]]
+    seqs = [str(s) for s in z["sequence"]]
     print(f"{len(seqs)} candidates loaded from 5.2")
 
     # Pull the candidate metadata (length/sources/enzymes) and reorder it to match
@@ -109,13 +109,13 @@ def main():
     # Assemble the ranked table.
     out = pd.DataFrame({
         "peptide_id": pid,
-        "sequence":   seqs,
-        "length":     meta["length"].to_numpy(),
-        "sources":    meta["sources"].to_numpy(),
-        "enzymes":    meta["enzymes"].to_numpy(),
-        "esm_prob":   np.round(esm_prob, 4),
-        "xgb_prob":   np.round(xgb_prob, 4),
-        "consensus":  np.round(consensus, 4),
+        "sequence": seqs,
+        "length": meta["length"].to_numpy(),
+        "sources": meta["sources"].to_numpy(),
+        "enzymes": meta["enzymes"].to_numpy(),
+        "esm_prob": np.round(esm_prob, 4),
+        "xgb_prob": np.round(xgb_prob, 4),
+        "consensus": np.round(consensus, 4),
         
         # high-confidence = both models independently call it positive
         "high_confidence": (esm_prob >= THRESHOLD) & (xgb_prob >= THRESHOLD),
