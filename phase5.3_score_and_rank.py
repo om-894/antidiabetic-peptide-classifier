@@ -1,5 +1,4 @@
 
-
 # Install:
 # pip install xgboost scikit-learn joblib peptides pandas numpy
 
@@ -14,16 +13,17 @@ macOS torch+xgboost libomp clash):
   3. average with the ESM-2/DoRA probability -> consensus, then rank.
 
 Consensus, not one model: ESM-2 alone flags roughly half the pool and is mildly
-miscalibrated, so ranking on the mean of two independent views and keeping only
-candidates both call positive is a more precise screen. The ranking is what's used,
-not the absolute probability.
+miscalibrated, so the mean of two independent views is a more precise, better-calibrated
+screen (Phase 5.0). Discoveries are taken by a calibrated cutoff (consensus >=
+DISCOVERY_THRESHOLD), not an arbitrary top-N.
 
 INPUT   screening/screening_esm2.npz        X_emb, esm_prob, peptide_id, sequence
         screening/screening_candidates.csv  metadata: length, sources, enzymes
         fusion_vectors.npz                   desc_mean/desc_std (the train z-score)
         models/base_xgb.joblib              XGBoost base learner, 1287-d input
 OUTPUT  screening/screening_ranked.csv       every candidate, ranked, both scores
-        screening/screening_shortlist.csv    high-confidence subset (feeds 5.4)
+        screening/screening_discovery.csv    calibrated discovery set (feeds 5.4)
+        screening/screening_shortlist.csv    old agreement set (comparison)
 
 REQUIREMENTS  pip install xgboost scikit-learn joblib peptides pandas numpy
 """
@@ -43,7 +43,12 @@ FUSION_NPZ = "fusion_vectors.npz" # for the saved train z-score stats
 XGB_MODEL  = "models/base_xgb.joblib" # base learner (matches the multi-seed results)
 
 OUT_RANKED    = "screening/screening_ranked.csv"
+OUT_DISCOVERY = "screening/screening_discovery.csv"
 OUT_SHORTLIST = "screening/screening_shortlist.csv"
+
+# Calibrated discovery cutoff from Phase 5.0: consensus >= 0.90 -> ~90% verified
+# positive rate on held-out data. This is the primary screen, not top-N.
+DISCOVERY_THRESHOLD = 0.90
 
 # Agreement threshold: a candidate is "high-confidence" only if both models put it
 # above this. 0.5 = each model's own positive call; raise it for a stricter screen.
@@ -60,7 +65,7 @@ def descriptors(seq):
     """The 7 global physicochemical descriptors, in DESCRIPTOR_NAMES order
     (identical to Phase 2.2 so the fused vector matches training)."""
     p = peptides.Peptide(seq)
-    aromaticity = sum(seq.count(a) for a in "FWY") / len(seq)   # Lobry FWY fraction
+    aromaticity = sum(seq.count(a) for a in "FWY") / len(seq) # Lobry FWY fraction
     return [
         p.charge(pH=7.4),
         p.hydrophobicity(scale="KyteDoolittle"),
@@ -116,22 +121,33 @@ def main():
         "esm_prob": np.round(esm_prob, 4),
         "xgb_prob": np.round(xgb_prob, 4),
         "consensus": np.round(consensus, 4),
+
+        # discovery = calibrated cutoff from Phase 5.0 (verified ~90% positive rate)
+        "discovery": consensus >= DISCOVERY_THRESHOLD,
         
         # high-confidence = both models independently call it positive
         "high_confidence": (esm_prob >= THRESHOLD) & (xgb_prob >= THRESHOLD),
     }).sort_values("consensus", ascending=False).reset_index(drop=True)
 
     out.to_csv(OUT_RANKED, index=False)
+    discovery = out[out["discovery"]].reset_index(drop=True) # calibrated primary set
+    discovery.to_csv(OUT_DISCOVERY, index=False)
     shortlist = out[out["high_confidence"]].reset_index(drop=True)
     shortlist.to_csv(OUT_SHORTLIST, index=False)
 
-    # Show how many candidates each model calls positive and how many both agree on.
+    # Show how the funnel narrows, and whether the recovered known actives survive.
     print(f"ESM-2 P>0.5 : {(esm_prob >= 0.5).sum()}/{len(seqs)}")
     print(f"XGB   P>0.5 : {(xgb_prob >= 0.5).sum()}/{len(seqs)}")
     print(f"BOTH agree  : {len(shortlist)}/{len(seqs)}  (high-confidence shortlist)")
-    print(f"\nsaved -> {OUT_RANKED}  and  {OUT_SHORTLIST}")
-    print("\ntop 10 by consensus:")
-    print(shortlist.head(10)[["peptide_id", "sequence", "length",
+    print(f"DISCOVERY   : {len(discovery)}/{len(seqs)}  (consensus >= {DISCOVERY_THRESHOLD})")
+
+    # do the recovered known DPP-IV inhibitors survive the calibrated cutoff?
+    known = ["GPFPSIL", "LPGF", "IPAVF", "EPYF"]
+    print(f"known actives in discovery set: {discovery[discovery.sequence.isin(known)].sequence.tolist()}")
+
+    print(f"\nsaved -> {OUT_DISCOVERY}  (+ ranked, + shortlist)")
+    print("\ntop 10 discoveries by consensus:")
+    print(discovery.head(10)[["peptide_id", "sequence", "length",
                               "esm_prob", "xgb_prob", "consensus"]].to_string(index=False))
 
 
