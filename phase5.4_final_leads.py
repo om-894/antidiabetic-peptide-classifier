@@ -1,5 +1,6 @@
 
 # How to produce this script's allergenicity input (run first):
+# https://webs.iiitd.edu.in/raghava/algpred2/batch_action.php
 # upload screening/safe_shortlist.fasta to AlgPred 2.0 (AAC based RF, threshold 0.3)
 # saved the results as screening/algpred2_safe.csv  (columns: Subject, ML Score, Prediction)
 
