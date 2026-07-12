@@ -1,4 +1,14 @@
 
+# How to produce this script's toxicity input (run these first). see the githbub (https://github.com/raghavagps/toxinpred2)
+#   pip install toxinpred2                       # one-time; standalone pip tool, no BLAST needed
+#   # export all 412 discoveries to FASTA (set TOP_N = None in phase5.4_safety_export.py first):
+#   python phase5.4_safety_export.py
+#   # predict toxicity — Model 1 (AAC-RF), -d 2 reports all peptides (not just toxins):
+#   toxinpred2 -i screening/discovery_top412.fasta -o screening/toxinpred2_discovery.csv -m 1 -d 2
+#   # then run this file:
+#   python phase5.4_safety_select.py
+
+
 
 """
 Phase 5.4 (export): write the top-ranked discovery set as FASTA for safety screening.
@@ -21,7 +31,7 @@ import pandas as pd
 # CONFIG
 # --------------------------------------------------------------------------- #
 DISCOVERY = "screening/screening_discovery.csv"
-TOP_N = 50 # how many top candidates to screen (None = all)
+TOP_N = None # how many top candidates to screen (None = all)
 
 
 def main():
