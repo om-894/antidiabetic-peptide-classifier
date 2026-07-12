@@ -23,22 +23,25 @@ SAFE = "screening/screening_safe_shortlist.csv"
 ALG  = "screening/algpred2_safe.csv"
 OUT  = "screening/screening_final_leads.csv"
 
-
+# read in csvs, join on peptide_id, gate on non-allergen, rank by consensus, save final leads
 def main():
     safe = pd.read_csv(SAFE, keep_default_na=False)
     alg  = pd.read_csv(ALG, keep_default_na=False)
     alg.columns = [c.strip() for c in alg.columns] # "ML Score" has a space
     alg = alg.rename(columns={"Subject": "peptide_id", "ML Score": "alg_score", "Prediction": "alg_pred"})
 
+    # join the AlgPred results onto the safe leads by peptide_id, then gate and rank
     m = safe.merge(alg[["peptide_id", "alg_score", "alg_pred"]], on="peptide_id", how="left")
     assert m["alg_pred"].notna().all(), "some safe leads missing an AlgPred call"
 
-    m["non_allergen"] = m["alg_pred"] == "Non-Allergen"       # soft gate; scores are borderline
+    m["non_allergen"] = m["alg_pred"] == "Non-Allergen" # soft gate, scores are borderline
     final = m[m["non_allergen"]].sort_values("consensus", ascending=False).reset_index(drop=True)
 
+    # save the final leads to csv, with the continuous scores for traceability
     cols = ["peptide_id", "sequence", "length", "sources", "consensus", "tox_score", "alg_score"]
     final[cols].to_csv(OUT, index=False)
 
+    # also print the final leads to console, for quick inspection
     print(f"non-toxic leads: {len(safe)} | also non-allergen: {len(final)}")
     print(f"saved -> {OUT}")
     print("\ntop 10 final leads (non-toxic and non-allergen):")
