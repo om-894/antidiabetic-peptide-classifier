@@ -30,6 +30,7 @@ import pandas as pd
 DISCOVERY = "screening/screening_discovery.csv"
 TOXPRED   = "screening/toxinpred2_discovery.csv"
 OUT       = "screening/screening_safe_shortlist.csv"
+OUT_FASTA = "screening/safe_shortlist.fasta" # safe leads as FASTA, for AlgPred 2.0
 
 TOX_THRESHOLD = 0.6   # ToxinPred2 ML_Score below this = non-toxic (their default cut)
 
@@ -49,6 +50,11 @@ def main():
 
     cols = ["peptide_id", "sequence", "length", "sources", "consensus", "tox_score"]
     safe[cols].to_csv(OUT, index=False)
+
+    # also write the safe leads as FASTA, for allergenicity screening (AlgPred 2.0)
+    with open(OUT_FASTA, "w") as fh:
+        for _, r in safe.iterrows():
+            fh.write(f">{r['peptide_id']}\n{r['sequence']}\n")
 
     print(f"discoveries: {len(m)} | non-toxic (ML_Score<{TOX_THRESHOLD}): {len(safe)}")
     print(f"saved -> {OUT}")
