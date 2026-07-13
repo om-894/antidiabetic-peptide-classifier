@@ -1,0 +1,15 @@
+model,feature,mean_abs_shap
+xgb,net_charge_pH7.4,0.49216675758361816
+xgb,gravy_kd,0.014439853839576244
+xgb,isoelectric_point,0.11030728369951248
+xgb,aromaticity,0.0
+xgb,instability_index,0.08896699547767639
+xgb,aliphatic_index,0.006622327957302332
+xgb,boman_index,0.13129976391792297
+rf,net_charge_pH7.4,0.012019727370901368
+rf,gravy_kd,0.0021829791799995984
+rf,isoelectric_point,0.010128141007642292
+rf,aromaticity,0.00014587276995589203
+rf,instability_index,0.0003020143828188627
+rf,aliphatic_index,0.00028763218633573863
+rf,boman_index,0.007266382798631867
