@@ -1,0 +1,3 @@
+# HADDOCK active residues (ambiguous interaction restraints)
+receptor (chain A) active: 125,205,206,357,545,546,547,554,627,628,629,630,631,632,656,659,662,663,666,710,711,740
+peptide  (chain B) active: all residues (1..N per peptide)
