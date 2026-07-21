@@ -54,14 +54,20 @@ def fetch_pdb(pdb_id):
 
 
 def clean_receptor(raw, chain, out_path):
-    """Keep only chain `chain` protein atoms (drop waters, sugars, ligand, ions, other chains)."""
-    # PDB is fixed-column: col 22 (index 21) = chain id, col 17 (index 16) = altLoc.
-    # DPP-IV crystallises as a dimer, so keep one chain; altLoc " "/"A" takes the first
-    # conformer where an atom was modelled twice (drops the duplicate "B" positions).
-    kept = [l for l in raw
-            if l.startswith("ATOM") and l[21] == chain and l[16] in (" ", "A")]
+    """Keep only chain `chain` protein atoms (drop waters, sugars, ligand, ions, other chains).
+    Also collapse alternate conformations: keep the first form of each atom and blank the altLoc
+    column - otherwise HADDOCK rejects the file for having 'multiple forms' of a residue."""
+    kept, seen = [], set()
+    for l in raw:
+        if not (l.startswith("ATOM") and l[21] == chain):
+            continue
+        key = (l[12:16], l[22:27]) # atom name + residue (resSeq + insertion code)
+        if key in seen: # an alternate conformer of an atom we already kept -> skip
+            continue
+        seen.add(key)
+        kept.append(l[:16] + " " + l[17:]) # blank col 17 (altLoc) so no stale conformer flag remains
     with open(out_path, "w") as fh:
-        fh.write("\n".join(kept) + "\nTER\nEND\n") # TER/END so it's a valid standalone PDB
+        fh.write("\n".join(kept) + "\nTER\nEND\n")
 
 
 def active_site(raw, chain, ligand, cutoff):
