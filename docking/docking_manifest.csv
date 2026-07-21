@@ -1,0 +1,9 @@
+peptide_id,sequence,role,length
+LEAD_T1_FVAPFPEVF,FVAPFPEVF,tier1,9
+LEAD_T2_CAND3348,ALPMHIRLSFNPTQLEEQCHI,tier2,21
+LEAD_T2_CAND3554,TNDTPMIGTLAGANSLLNALPEEVIQHTFNLK,tier2,32
+POS_DiprotinA,IPI,pos_control,3
+POS_IPAVF,IPAVF,pos_control,5
+NEG_hard_1,RRRLNKHEE,neg_control,9
+NEG_hard_2,SSKDRLRR,neg_control,8
+NEG_hard_3,GRADR,neg_control,5
