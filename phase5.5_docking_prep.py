@@ -1,6 +1,6 @@
 
 """
-Phase 5.5 (docking prep): assemble HADDOCK inputs for DPP-IV docking.
+Phase 5.5 (docking prep): assemble HADDOCK (https://wenmr.science.uu.nl/) inputs for DPP-IV docking.
 
 For each peptide, builds a 3-conformation ensemble (extended / helix / PPII) that
 HADDOCK docks flexibly, plus the cleaned DPP-IV receptor and the active-site residues
