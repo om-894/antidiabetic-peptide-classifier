@@ -1,0 +1,244 @@
+tier,peptide_id,sequence,length,sources,consensus,tox_score,alg_score,flag
+1,CAND2163,GPFPSIL,7,soybean_beta_conglycinin,0.9976,0.652,,soft-flag: short-length safety artefact
+1,CAND2716,FVAPFPEVF,9,bovine_alpha_s1_casein,0.9968,0.588,0.54,soft-flag: short-length safety artefact
+1,CAND1349,FYPEL,5,bovine_alpha_s1_casein,0.9962,0.649,,soft-flag: short-length safety artefact
+1,CAND0979,LPGF,4,chicken_ovalbumin,0.9956,0.674,,soft-flag: short-length safety artefact
+1,CAND2651,YPILPEYL,8,chicken_ovalbumin,0.9932,0.697,,soft-flag: short-length safety artefact
+1,CAND2499,KGPFPSIL,8,soybean_beta_conglycinin,0.9929,0.697,,soft-flag: short-length safety artefact
+1,CAND0815,FPLL,4,soybean_beta_conglycinin,0.9929,0.659,,soft-flag: short-length safety artefact
+1,CAND1348,FVPAL,5,bovine_lactoferrin,0.9923,0.595,0.411,soft-flag: short-length safety artefact
+1,CAND2152,FVAPFPE,7,bovine_alpha_s1_casein,0.9919,0.595,0.568,soft-flag: short-length safety artefact
+1,CAND3057,YCPIAIMSAL,10,chicken_ovalbumin,0.9911,0.769,,soft-flag: short-length safety artefact
+1,CAND0978,LPFA,4,chicken_ovalbumin,0.9896,0.616,,soft-flag: short-length safety artefact
+1,CAND1400,IPAVF,5,bovine_beta_lactoglobulin,0.9883,0.576,0.431,soft-flag: short-length safety artefact
+1,CAND2914,FGSPPGQRDL,10,bovine_lactoferrin,0.9883,0.693,,soft-flag: short-length safety artefact
+1,CAND2652,YPVEPFTE,8,bovine_beta_casein,0.9876,0.566,0.503,soft-flag: short-length safety artefact
+1,CAND2623,VAPFPEVF,8,bovine_alpha_s1_casein,0.9873,0.582,0.545,soft-flag: short-length safety artefact
+1,CAND3021,TAGWNIPMGL,10,bovine_lactoferrin,0.9872,0.651,,soft-flag: short-length safety artefact
+1,CAND2589,SFMAIPPK,8,bovine_kappa_casein,0.987,0.52,0.3,soft-flag: short-length safety artefact
+1,CAND1695,ALPQYL,6,bovine_alpha_s2_casein,0.987,0.617,,soft-flag: short-length safety artefact
+1,CAND0794,EPYF,4,bovine_lactoferrin,0.9865,0.622,,soft-flag: short-length safety artefact
+1,CAND1610,TLPFL,5,bovine_kappa_casein,0.9855,0.593,0.425,soft-flag: short-length safety artefact
+1,CAND2068,YPILPE,6,chicken_ovalbumin,0.9854,0.722,,soft-flag: short-length safety artefact
+1,CAND0828,FVPA,4,bovine_lactoferrin,0.9852,0.558,0.536,soft-flag: short-length safety artefact
+1,CAND1344,FPQYL,5,bovine_alpha_s2_casein,0.9846,0.578,0.517,soft-flag: short-length safety artefact
+1,CAND1677,YPELF,5,bovine_alpha_s1_casein,0.9841,0.649,,soft-flag: short-length safety artefact
+1,CAND2676,CPIAIMSAL,9,chicken_ovalbumin,0.9839,0.805,,soft-flag: short-length safety artefact
+1,CAND1161,TLPF,4,bovine_kappa_casein,0.9839,0.592,0.426,soft-flag: short-length safety artefact
+1,CAND0786,ELPF,4,chicken_ovalbumin,0.9824,0.707,,soft-flag: short-length safety artefact
+1,CAND0816,FPQY,4,bovine_alpha_s2_casein,0.9821,0.568,0.652,soft-flag: short-length safety artefact
+1,CAND1823,HLPLPL,6,bovine_beta_casein,0.9813,0.67,,soft-flag: short-length safety artefact
+1,CAND0737,DEPF,4,soybean_beta_conglycinin,0.9813,0.689,,soft-flag: short-length safety artefact
+1,CAND1685,AFPGSA,6,soybean_beta_conglycinin,0.9812,0.548,0.391,soft-flag: short-length safety artefact
+1,CAND1494,MPFPK,5,bovine_beta_casein,0.9808,0.605,,soft-flag: short-length safety artefact
+1,CAND2932,IHPFAQTQSL,10,bovine_beta_casein,0.9803,0.456,0.438,soft-flag: short-length safety artefact
+1,CAND2536,MPCTEDYL,8,bovine_serum_albumin,0.9798,0.811,,soft-flag: short-length safety artefact
+1,CAND2923,GSPPGQRDLL,10,bovine_lactoferrin,0.9795,0.699,,soft-flag: short-length safety artefact
+1,CAND2867,VTLDGGMVF,9,bovine_lactoferrin,0.9781,0.659,,soft-flag: short-length safety artefact
+1,CAND1697,APVDAF,6,bovine_lactoferrin,0.9773,0.591,0.493,soft-flag: short-length safety artefact
+1,CAND1879,LPLAAL,6,chicken_lysozyme_c,0.9768,0.662,,soft-flag: short-length safety artefact
+1,CAND1787,FALPQY,6,bovine_alpha_s2_casein,0.9766,0.595,0.445,soft-flag: short-length safety artefact
+1,CAND1231,YPEL,4,bovine_alpha_s1_casein,0.9765,0.676,,soft-flag: short-length safety artefact
+1,CAND1883,LQQCPF,6,bovine_serum_albumin,0.9765,0.777,,soft-flag: short-length safety artefact
+1,CAND1334,EYVSF,5,soybean_glycinin_g1,0.976,0.602,,soft-flag: short-length safety artefact
+1,CAND2485,IPENLPPL,8,bovine_serum_albumin,0.9753,0.682,,soft-flag: short-length safety artefact
+1,CAND1792,FPKAEF,6,bovine_serum_albumin,0.9752,0.632,,soft-flag: short-length safety artefact
+1,CAND0431,LPL,3,chicken_lysozyme_c,0.9751,0.702,,soft-flag: short-length safety artefact
+1,CAND2032,VAPFPE,6,bovine_alpha_s1_casein,0.9746,0.582,0.572,soft-flag: short-length safety artefact
+1,CAND3044,VLLPDEVSGL,10,chicken_ovalbumin,0.9743,0.67,,soft-flag: short-length safety artefact
+1,CAND2881,AMAASDISLL,10,bovine_beta_lactoglobulin,0.9741,0.616,,soft-flag: short-length safety artefact
+1,CAND2732,GWIIPMGIL,9,bovine_lactoferrin,0.9736,0.713,,soft-flag: short-length safety artefact
+1,CAND0704,AYPF,4,soybean_beta_conglycinin,0.9733,0.559,0.521,soft-flag: short-length safety artefact
+1,CAND2781,NAVPITPTL,9,bovine_alpha_s2_casein,0.9726,0.617,,soft-flag: short-length safety artefact
+1,CAND1342,FPGSA,5,soybean_beta_conglycinin,0.9725,0.538,0.379,soft-flag: short-length safety artefact
+1,CAND1841,IVPQNF,6,soybean_glycinin_g1,0.9723,0.626,,soft-flag: short-length safety artefact
+1,CAND1544,QSAPL,5,bovine_beta_lactoglobulin,0.9718,0.598,0.405,soft-flag: short-length safety artefact
+1,CAND1649,VPALL,5,bovine_lactoferrin,0.9716,0.637,,soft-flag: short-length safety artefact
+1,CAND3028,VAPFPEVFGK,10,bovine_alpha_s1_casein,0.9708,0.591,0.499,soft-flag: short-length safety artefact
+1,CAND2234,MMSFVSL,7,bovine_alpha_lactalbumin,0.9705,0.513,0.216,soft-flag: short-length safety artefact
+1,CAND1481,LTLPF,5,bovine_kappa_casein,0.9704,0.593,0.425,soft-flag: short-length safety artefact
+1,CAND2446,FALPQYLK,8,bovine_alpha_s2_casein,0.9693,0.609,,soft-flag: short-length safety artefact
+1,CAND1673,YAPEL,5,bovine_serum_albumin,0.9692,0.657,,soft-flag: short-length safety artefact
+1,CAND2477,HKEMPFPK,8,bovine_beta_casein,0.9692,0.543,0.365,soft-flag: short-length safety artefact
+1,CAND2298,SFNPTQL,7,bovine_beta_lactoglobulin,0.9687,0.498,0.39,soft-flag: short-length safety artefact
+1,CAND0668,YPF,3,soybean_beta_conglycinin,0.9685,0.587,0.552,soft-flag: short-length safety artefact
+1,CAND3025,TQTPVVVPPF,10,bovine_beta_casein,0.9682,0.547,0.584,soft-flag: short-length safety artefact
+1,CAND1278,CFLPL,5,chicken_lysozyme_c,0.968,0.787,,soft-flag: short-length safety artefact
+1,CAND2994,QLDAYPSGAW,10,bovine_alpha_s1_casein,0.9671,0.601,,soft-flag: short-length safety artefact
+1,CAND1908,NIPMGL,6,bovine_lactoferrin,0.9669,0.674,,soft-flag: short-length safety artefact
+1,CAND0287,FPL,3,soybean_beta_conglycinin,0.9668,0.659,,soft-flag: short-length safety artefact
+1,CAND2055,VPYPQR,6,bovine_beta_casein,0.9666,0.599,0.433,soft-flag: short-length safety artefact
+1,CAND1236,YVPL,4,bovine_alpha_s1_casein,0.9662,0.611,,soft-flag: short-length safety artefact
+1,CAND0429,LPF,3,chicken_ovalbumin,0.9659,0.659,,soft-flag: short-length safety artefact
+1,CAND1508,NLPPL,5,bovine_serum_albumin,0.9658,0.678,,soft-flag: short-length safety artefact
+1,CAND2777,MAMGITDVF,9,chicken_ovalbumin,0.9657,0.629,,soft-flag: short-length safety artefact
+1,CAND2839,TISSEDEPF,9,soybean_beta_conglycinin,0.9653,0.622,,soft-flag: short-length safety artefact
+1,CAND2737,HPEYAVSVL,9,bovine_serum_albumin,0.965,0.556,0.392,soft-flag: short-length safety artefact
+1,CAND2921,GPFPSILGAL,10,soybean_beta_conglycinin,0.9648,0.661,,soft-flag: short-length safety artefact
+1,CAND2456,FVKNDTVW,8,bovine_lactoferrin,0.964,0.625,,soft-flag: short-length safety artefact
+1,CAND2171,HLPLPLL,7,bovine_beta_casein,0.9636,0.67,,soft-flag: short-length safety artefact
+1,CAND1207,VPQL,4,bovine_alpha_s1_casein,0.9629,0.656,,soft-flag: short-length safety artefact
+1,CAND1580,SLEPL,5,bovine_lactoferrin,0.9628,0.662,,soft-flag: short-length safety artefact
+1,CAND1328,EPINF,5,chicken_ovalbumin,0.9619,0.652,,soft-flag: short-length safety artefact
+1,CAND1479,LSAEF,5,soybean_glycinin_g1,0.9618,0.635,,soft-flag: short-length safety artefact
+1,CAND2738,HQGLPQEVL,9,bovine_alpha_s1_casein,0.9617,0.587,0.446,soft-flag: short-length safety artefact
+1,CAND0981,LPLA,4,chicken_lysozyme_c,0.9607,0.661,,soft-flag: short-length safety artefact
+1,CAND2369,YPILPEY,7,chicken_ovalbumin,0.9603,0.701,,soft-flag: short-length safety artefact
+1,CAND2931,IAVPTGVAWW,10,soybean_glycinin_g1,0.9572,0.593,0.395,soft-flag: short-length safety artefact
+1,CAND1889,LVPPQE,6,soybean_glycinin_g1,0.957,0.631,,soft-flag: short-length safety artefact
+1,CAND1246,ADHPF,5,chicken_ovalbumin,0.9562,0.598,0.506,soft-flag: short-length safety artefact
+1,CAND1895,MFVPHY,6,soybean_glycinin_g1,0.9558,0.499,0.363,soft-flag: short-length safety artefact
+1,CAND1732,CYSTVF,6,bovine_serum_albumin,0.9557,0.738,,soft-flag: short-length safety artefact
+1,CAND1204,VPAL,4,bovine_lactoferrin,0.9556,0.627,,soft-flag: short-length safety artefact
+1,CAND2878,AHKALCSEKL,10,bovine_alpha_lactalbumin,0.9544,0.845,,soft-flag: short-length safety artefact
+1,CAND1476,LPYPY,5,bovine_kappa_casein,0.9538,0.641,,soft-flag: short-length safety artefact
+1,CAND2391,CAGDDQGL,8,bovine_lactoferrin,0.9536,0.83,,soft-flag: short-length safety artefact
+1,CAND0814,FPKA,4,bovine_serum_albumin,0.9533,0.631,,soft-flag: short-length safety artefact
+1,CAND2484,IPAGTTYY,8,soybean_beta_conglycinin,0.9528,0.573,0.48,soft-flag: short-length safety artefact
+1,CAND2627,VIPAAYPF,8,soybean_beta_conglycinin,0.9522,0.535,0.451,soft-flag: short-length safety artefact
+1,CAND2473,GWNIPMGL,8,bovine_lactoferrin,0.9515,0.67,,soft-flag: short-length safety artefact
+1,CAND2476,HIATNAVL,8,chicken_ovalbumin,0.9515,0.589,0.3,soft-flag: short-length safety artefact
+1,CAND1232,YPNL,4,bovine_lactoferrin,0.9512,0.616,,soft-flag: short-length safety artefact
+1,CAND2058,VTFISL,6,bovine_serum_albumin,0.951,0.538,0.242,soft-flag: short-length safety artefact
+1,CAND1581,SLGAL,5,bovine_lactoferrin,0.9506,0.636,,soft-flag: short-length safety artefact
+1,CAND2350,VLPVPQK,7,bovine_beta_casein,0.9504,0.67,,soft-flag: short-length safety artefact
+1,CAND0830,FYPE,4,bovine_alpha_s1_casein,0.9504,0.622,,soft-flag: short-length safety artefact
+1,CAND0744,DHPF,4,chicken_ovalbumin,0.9496,0.631,,soft-flag: short-length safety artefact
+1,CAND1010,MVYL,4,chicken_ovalbumin,0.9486,0.609,,soft-flag: short-length safety artefact
+1,CAND0897,IHPF,4,bovine_beta_casein,0.9483,0.606,,soft-flag: short-length safety artefact
+1,CAND2729,GSPPGQRDL,9,bovine_lactoferrin,0.9482,0.693,,soft-flag: short-length safety artefact
+1,CAND1460,LEHAF,5,soybean_glycinin_g1,0.9473,0.698,,soft-flag: short-length safety artefact
+1,CAND2418,DMPIQAFL,8,bovine_beta_casein,0.9473,0.717,,soft-flag: short-length safety artefact
+1,CAND3027,TVDMESTEVF,10,bovine_alpha_s2_casein,0.9471,0.577,0.296,soft-flag: short-length safety artefact
+1,CAND2912,EPMIGVNQEL,10,bovine_alpha_s1_casein,0.947,0.614,,soft-flag: short-length safety artefact
+1,CAND3059,YLGYLEQLLR,10,bovine_alpha_s1_casein,0.9469,0.644,,soft-flag: short-length safety artefact
+1,CAND2926,GYGGVSLPEW,10,bovine_alpha_lactalbumin,0.9466,0.608,,soft-flag: short-length safety artefact
+1,CAND2769,LPGFGDSIE,9,chicken_ovalbumin,0.9466,0.732,,soft-flag: short-length safety artefact
+1,CAND1678,YPSGA,5,bovine_alpha_s1_casein,0.9463,0.544,0.423,soft-flag: short-length safety artefact
+1,CAND2951,KTISSEDEPF,10,soybean_beta_conglycinin,0.9462,0.627,,soft-flag: short-length safety artefact
+1,CAND0580,SPA,3,bovine_kappa_casein,0.946,0.603,,soft-flag: short-length safety artefact
+1,CAND1237,YVSF,4,soybean_glycinin_g1,0.9455,0.558,0.309,soft-flag: short-length safety artefact
+1,CAND2292,RYPILPE,7,chicken_ovalbumin,0.9442,0.708,,soft-flag: short-length safety artefact
+1,CAND1831,ILELPF,6,chicken_ovalbumin,0.9436,0.726,,soft-flag: short-length safety artefact
+1,CAND2962,LPHHADADFL,10,soybean_beta_conglycinin,0.9431,0.649,,soft-flag: short-length safety artefact
+1,CAND2633,VLIVPQNF,8,soybean_glycinin_g1,0.9425,0.627,,soft-flag: short-length safety artefact
+1,CAND2329,TESLEPL,7,bovine_lactoferrin,0.9416,0.634,,soft-flag: short-length safety artefact
+1,CAND2183,IPAGTTY,7,soybean_beta_conglycinin,0.9414,0.576,0.468,soft-flag: short-length safety artefact
+1,CAND0809,FGSL,4,soybean_glycinin_g1,0.941,0.613,,soft-flag: short-length safety artefact
+1,CAND2862,VPQVSTPTL,9,bovine_serum_albumin,0.9408,0.542,0.443,soft-flag: short-length safety artefact
+1,CAND1745,DKLPGF,6,chicken_ovalbumin,0.9405,0.742,,soft-flag: short-length safety artefact
+1,CAND0982,LPQY,4,bovine_alpha_s2_casein,0.9405,0.607,,soft-flag: short-length safety artefact
+1,CAND0880,HPYF,4,bovine_serum_albumin,0.9393,0.57,0.524,soft-flag: short-length safety artefact
+1,CAND2399,CPIAIMSA,8,chicken_ovalbumin,0.9388,0.781,,soft-flag: short-length safety artefact
+1,CAND0984,LQGF,4,soybean_beta_conglycinin,0.9387,0.709,,soft-flag: short-length safety artefact
+1,CAND1350,GALGL,5,bovine_lactoferrin,0.9385,0.722,,soft-flag: short-length safety artefact
+1,CAND1670,WEKAF,5,chicken_ovalbumin,0.9374,0.712,,soft-flag: short-length safety artefact
+1,CAND0293,FVL,3,soybean_beta_conglycinin,0.9358,0.683,,soft-flag: short-length safety artefact
+1,CAND0988,LQSW,4,bovine_beta_casein,0.9356,0.652,,soft-flag: short-length safety artefact
+1,CAND0739,DFPA,4,soybean_glycinin_g1,0.9352,0.629,,soft-flag: short-length safety artefact
+1,CAND1338,FGDEL,5,bovine_serum_albumin,0.9351,0.735,,soft-flag: short-length safety artefact
+1,CAND2447,FFEITPEK,8,soybean_beta_conglycinin,0.9337,0.638,,soft-flag: short-length safety artefact
+1,CAND2519,LKPDPNTL,8,bovine_serum_albumin,0.9331,0.641,,soft-flag: short-length safety artefact
+1,CAND2038,VEGPKL,6,bovine_serum_albumin,0.9331,0.731,,soft-flag: short-length safety artefact
+1,CAND2526,LQDKIHPF,8,bovine_beta_casein,0.9329,0.643,,soft-flag: short-length safety artefact
+1,CAND2069,YPSGAW,6,bovine_alpha_s1_casein,0.9326,0.555,0.406,soft-flag: short-length safety artefact
+1,CAND2628,VIPYVRYL,8,bovine_alpha_s2_casein,0.9319,0.625,,soft-flag: short-length safety artefact
+1,CAND0461,MPF,3,chicken_ovalbumin,0.9314,0.601,,soft-flag: short-length safety artefact
+1,CAND1922,QAYPNL,6,bovine_lactoferrin,0.9314,0.642,,soft-flag: short-length safety artefact
+1,CAND1296,DHPFL,5,chicken_ovalbumin,0.9313,0.667,,soft-flag: short-length safety artefact
+1,CAND0681,AFAL,4,bovine_lactoferrin,0.9302,0.678,,soft-flag: short-length safety artefact
+1,CAND2355,VPTGVAW,7,soybean_glycinin_g1,0.9302,0.565,0.431,soft-flag: short-length safety artefact
+1,CAND2916,FLVPPQESQK,10,soybean_glycinin_g1,0.9291,0.631,,soft-flag: short-length safety artefact
+1,CAND1772,ELINSW,6,chicken_ovalbumin,0.929,0.658,,soft-flag: short-length safety artefact
+1,CAND2066,YIPIQY,6,bovine_kappa_casein,0.9284,0.602,,soft-flag: short-length safety artefact
+1,CAND2726,GPFPSILGA,9,soybean_beta_conglycinin,0.9279,0.636,,soft-flag: short-length safety artefact
+1,CAND1493,MPCTE,5,bovine_serum_albumin,0.9278,0.772,,soft-flag: short-length safety artefact
+1,CAND2736,HLVDEPQNL,9,bovine_serum_albumin,0.9276,0.598,0.335,soft-flag: short-length safety artefact
+1,CAND2507,KPTPEGDL,8,bovine_beta_lactoglobulin,0.9267,0.688,,soft-flag: short-length safety artefact
+1,CAND2713,FHATQAEQL,9,bovine_alpha_lactalbumin,0.9265,0.582,0.448,soft-flag: short-length safety artefact
+1,CAND1126,SPQL,4,soybean_beta_conglycinin,0.9265,0.613,,soft-flag: short-length safety artefact
+1,CAND1336,FESNF,5,chicken_lysozyme_c,0.9258,0.63,,soft-flag: short-length safety artefact
+1,CAND2378,AFALECIR,8,bovine_lactoferrin,0.9252,0.819,,soft-flag: short-length safety artefact
+1,CAND2181,IIPMGIL,7,bovine_lactoferrin,0.925,0.737,,soft-flag: short-length safety artefact
+1,CAND0870,GTWY,4,bovine_beta_lactoglobulin,0.9242,0.617,,soft-flag: short-length safety artefact
+1,CAND1653,VPVLA,5,bovine_lactoferrin,0.9237,0.639,,soft-flag: short-length safety artefact
+1,CAND0413,LGA,3,bovine_kappa_casein;chicken_ovalbumin,0.9233,0.715,,soft-flag: short-length safety artefact
+1,CAND2609,TCLVAVAL,8,bovine_alpha_s1_casein,0.9232,0.791,,soft-flag: short-length safety artefact
+1,CAND1258,ALPQY,5,bovine_alpha_s2_casein,0.9232,0.607,,soft-flag: short-length safety artefact
+1,CAND1395,IMSAL,5,chicken_ovalbumin,0.9232,0.576,0.218,soft-flag: short-length safety artefact
+1,CAND3018,SSVDINEGAL,10,soybean_beta_conglycinin,0.923,0.665,,soft-flag: short-length safety artefact
+1,CAND1484,LVGIL,5,bovine_alpha_lactalbumin,0.9228,0.721,,soft-flag: short-length safety artefact
+1,CAND2370,YPNLCQL,7,bovine_lactoferrin,0.9225,0.806,,soft-flag: short-length safety artefact
+1,CAND1932,QGPIVL,6,bovine_alpha_s2_casein,0.9219,0.699,,soft-flag: short-length safety artefact
+1,CAND2054,VPTGVA,6,soybean_glycinin_g1,0.9218,0.54,0.46,soft-flag: short-length safety artefact
+1,CAND2842,TPEVDDEAL,9,bovine_beta_lactoglobulin,0.9217,0.663,,soft-flag: short-length safety artefact
+1,CAND0640,VPL,3,bovine_alpha_s1_casein,0.9213,0.682,,soft-flag: short-length safety artefact
+1,CAND2371,YQGPIVL,7,bovine_alpha_s2_casein,0.9202,0.595,0.416,soft-flag: short-length safety artefact
+1,CAND2184,IPIQYVL,7,bovine_kappa_casein,0.9186,0.602,,soft-flag: short-length safety artefact
+1,CAND2678,CTISQPEWF,9,bovine_lactoferrin,0.9181,0.783,,soft-flag: short-length safety artefact
+1,CAND2667,AMKPWIQPK,9,bovine_alpha_s2_casein,0.9181,0.688,,soft-flag: short-length safety artefact
+1,CAND2450,FGSPPGQR,8,bovine_lactoferrin,0.9174,0.637,,soft-flag: short-length safety artefact
+1,CAND2480,HSSLDCVL,8,bovine_lactoferrin,0.9171,0.82,,soft-flag: short-length safety artefact
+1,CAND1263,APELL,5,bovine_serum_albumin,0.9169,0.69,,soft-flag: short-length safety artefact
+1,CAND1871,LEACAF,6,bovine_lactoferrin,0.916,0.794,,soft-flag: short-length safety artefact
+1,CAND2043,VGINYW,6,bovine_alpha_lactalbumin,0.916,0.617,,soft-flag: short-length safety artefact
+1,CAND2075,AGANSLL,7,soybean_glycinin_g1,0.9159,0.652,,soft-flag: short-length safety artefact
+1,CAND2027,TTMPLW,6,bovine_alpha_s1_casein,0.9152,0.613,,soft-flag: short-length safety artefact
+1,CAND2800,QGPIVLNPW,9,bovine_alpha_s2_casein,0.9147,0.733,,soft-flag: short-length safety artefact
+1,CAND1343,FPKAE,5,bovine_serum_albumin,0.9139,0.631,,soft-flag: short-length safety artefact
+1,CAND2902,EACFAVEGPK,10,bovine_serum_albumin,0.9137,0.822,,soft-flag: short-length safety artefact
+1,CAND1345,FSSAY,5,bovine_serum_albumin,0.9122,0.562,0.338,soft-flag: short-length safety artefact
+1,CAND2742,IAVPTGVAW,9,soybean_glycinin_g1,0.9113,0.591,0.391,soft-flag: short-length safety artefact
+1,CAND2964,LQPEVMGVSK,10,bovine_beta_casein,0.911,0.525,0.342,soft-flag: short-length safety artefact
+1,CAND2559,QGFSHNIL,8,soybean_beta_conglycinin,0.9102,0.597,0.304,soft-flag: short-length safety artefact
+1,CAND1512,NNPFY,5,soybean_beta_conglycinin,0.9101,0.586,0.394,soft-flag: short-length safety artefact
+1,CAND2098,CGLVPVL,7,bovine_lactoferrin,0.9099,0.879,,soft-flag: short-length safety artefact
+1,CAND1759,EACAFL,6,bovine_lactoferrin,0.9098,0.794,,soft-flag: short-length safety artefact
+1,CAND0573,SLA,3,bovine_beta_lactoglobulin;chicken_ovalbumin,0.9096,0.645,,soft-flag: short-length safety artefact
+1,CAND3005,RNAVPITPTL,10,bovine_alpha_s2_casein,0.9093,0.654,,soft-flag: short-length safety artefact
+1,CAND2225,LQCVKEL,7,chicken_ovalbumin,0.9087,0.828,,soft-flag: short-length safety artefact
+1,CAND1969,SDISLL,6,bovine_beta_lactoglobulin,0.9074,0.644,,soft-flag: short-length safety artefact
+1,CAND0965,LGEY,4,bovine_serum_albumin,0.9072,0.691,,soft-flag: short-length safety artefact
+1,CAND2235,MPCTEDY,7,bovine_serum_albumin,0.9069,0.786,,soft-flag: short-length safety artefact
+1,CAND0734,DEFF,4,bovine_lactoferrin,0.9068,0.713,,soft-flag: short-length safety artefact
+1,CAND0861,GSFL,4,bovine_serum_albumin,0.9067,0.613,,soft-flag: short-length safety artefact
+1,CAND0240,EFL,3,soybean_glycinin_g1,0.9066,0.738,,soft-flag: short-length safety artefact
+1,CAND0856,GPKL,4,bovine_serum_albumin,0.9065,0.735,,soft-flag: short-length safety artefact
+1,CAND1710,CAVGPE,6,bovine_lactoferrin,0.9058,0.8,,soft-flag: short-length safety artefact
+1,CAND2988,NVPGEIVESL,10,bovine_beta_casein,0.9057,0.677,,soft-flag: short-length safety artefact
+1,CAND1193,VIPA,4,soybean_beta_conglycinin,0.9048,0.614,,soft-flag: short-length safety artefact
+1,CAND0765,EACF,4,bovine_serum_albumin,0.9048,0.752,,soft-flag: short-length safety artefact
+1,CAND3041,VHKECCHGDL,10,bovine_serum_albumin,0.9047,0.948,,soft-flag: short-length safety artefact
+1,CAND2774,LSAEFGSLR,9,soybean_glycinin_g1,0.9038,0.671,,soft-flag: short-length safety artefact
+1,CAND2115,DLGEEHF,7,bovine_serum_albumin,0.9031,0.711,,soft-flag: short-length safety artefact
+1,CAND2776,LVVSTQTAL,9,bovine_serum_albumin,0.9024,0.567,0.326,soft-flag: short-length safety artefact
+1,CAND0415,LGF,3,bovine_lactoferrin,0.902,0.696,,soft-flag: short-length safety artefact
+1,CAND0591,SWL,3,soybean_glycinin_g1,0.9019,0.667,,soft-flag: short-length safety artefact
+1,CAND1840,IVPNSA,6,bovine_alpha_s1_casein,0.9011,0.552,0.372,soft-flag: short-length safety artefact
+2,CAND3348,ALPMHIRLSFNPTQLEEQCHI,21,bovine_beta_lactoglobulin,0.9884,0.515,0.276,passed hard toxicity + allergen filters
+2,CAND3554,TNDTPMIGTLAGANSLLNALPEEVIQHTFNLK,32,soybean_glycinin_g1,0.9884,0.404,0.195,passed hard toxicity + allergen filters
+2,CAND3323,ADAVTLDGGMVFEAGRDPYK,20,bovine_lactoferrin,0.9782,0.48,0.272,passed hard toxicity + allergen filters
+2,CAND3533,SAGWIIPMGILRPYLSWTESLEPLQGAVAK,30,bovine_lactoferrin,0.9776,0.508,0.21,passed hard toxicity + allergen filters
+2,CAND3584,TNDTPMIGTLAGANSLLNALPEEVIQHTFNLKSQQAR,37,soybean_glycinin_g1,0.9751,0.337,0.151,passed hard toxicity + allergen filters
+2,CAND3557,EIVPNSAEERLHSMKEGIHAQQKEPMIGVNQEL,33,bovine_alpha_s1_casein,0.9746,0.402,0.279,passed hard toxicity + allergen filters
+2,CAND3272,RVTEQESKPVQMMYQIGL,18,chicken_ovalbumin,0.9715,0.461,0.28,passed hard toxicity + allergen filters
+2,CAND3168,MAMGITDVFSSSANL,15,chicken_ovalbumin,0.9707,0.477,0.26,passed hard toxicity + allergen filters
+2,CAND3585,YDDFFLSSTQAQQSYLQGFSHNILETSFHSEFEEINR,37,soybean_beta_conglycinin,0.9564,0.533,0.291,passed hard toxicity + allergen filters
+2,CAND3555,YNLTSVLMAMGITDVFSSSANLSGISSAESLK,32,chicken_ovalbumin,0.9547,0.368,0.128,passed hard toxicity + allergen filters
+2,CAND3388,KPVTEAQSCHLAVAPNHAVVSR,22,bovine_lactoferrin,0.9546,0.569,0.291,passed hard toxicity + allergen filters
+2,CAND3103,LTEWTSSNVMEER,13,chicken_ovalbumin,0.9504,0.57,0.228,passed hard toxicity + allergen filters
+2,CAND3586,SCHTGLGRSAGWIIPMGILRPYLSWTESLEPLQGAVAK,38,bovine_lactoferrin,0.9475,0.348,0.181,passed hard toxicity + allergen filters
+2,CAND3343,SDIPNPIGSENSEKTTMPLW,20,bovine_alpha_s1_casein,0.9473,0.482,0.233,passed hard toxicity + allergen filters
+2,CAND3511,DEDTQAMPFRVTEQESKPVQMMYQIGLFR,29,chicken_ovalbumin,0.9452,0.416,0.26,passed hard toxicity + allergen filters
+2,CAND3575,MEEKYNLTSVLMAMGITDVFSSSANLSGISSAESLK,36,chicken_ovalbumin,0.9361,0.414,0.194,passed hard toxicity + allergen filters
+2,CAND3473,TDAPSFSDIPNPIGSENSEKTTMPL,25,bovine_alpha_s1_casein,0.936,0.396,0.236,passed hard toxicity + allergen filters
+2,CAND3311,SDIPNPIGSENSEKTTMPL,19,bovine_alpha_s1_casein,0.9351,0.468,0.196,passed hard toxicity + allergen filters
+2,CAND3344,TDAPSFSDIPNPIGSENSEK,20,bovine_alpha_s1_casein,0.9262,0.547,0.284,passed hard toxicity + allergen filters
+2,CAND3266,NNEDTPVVAVSIIDTNSL,18,soybean_glycinin_g1,0.9247,0.562,0.292,passed hard toxicity + allergen filters
+2,CAND3321,VPQLEIVPNSAEERLHSMK,19,bovine_alpha_s1_casein,0.9233,0.398,0.253,passed hard toxicity + allergen filters
+2,CAND3567,ILELPFASGTMSMLVLLPDEVSGLEQLESIINFEK,35,chicken_ovalbumin,0.9176,0.546,0.247,passed hard toxicity + allergen filters
+2,CAND3142,LTEWTSSNVMEERK,14,chicken_ovalbumin,0.9168,0.568,0.26,passed hard toxicity + allergen filters
+2,CAND3393,NAMFVPHYNLNANSIIYALNGR,22,soybean_glycinin_g1,0.9071,0.428,0.205,passed hard toxicity + allergen filters
+2,CAND3341,MYNNEDTPVVAVSIIDTNSL,20,soybean_glycinin_g1,0.9049,0.424,0.222,passed hard toxicity + allergen filters
+2,CAND3590,ELINSWVESQTNGIIRNVLQPSSVDSQTAMVLVNAIVFK,39,chicken_ovalbumin,0.9046,0.416,0.16,passed hard toxicity + allergen filters
+2,CAND3493,NVPGEIVESLSSSEESITRINKKIEKF,27,bovine_beta_casein,0.903,0.555,0.231,passed hard toxicity + allergen filters
