@@ -28,6 +28,12 @@ def main():
     test.to_csv(f"{OUT_DIR}/bertadp_hardneg_test.csv", index=False)
     hard[["Sequence", "Label"]].to_csv(f"{OUT_DIR}/bertadp_hardneg_all.csv", index=False)
 
+    # soft negatives (antimicrobial peptides) - BertADP should handle these, unlike the hard ones
+    soft = df[(df.Label == 0) & (df.NegType == "soft") & (df.Split == "test")][["Sequence", "Label"]]
+    soft.to_csv(f"{OUT_DIR}/bertadp_softneg_test.csv", index=False)
+
+    # report the counts and where they were written
+    print(f"test soft negatives: {len(soft)} -> {OUT_DIR}/bertadp_softneg_test.csv")
     print(f"test hard negatives: {len(test)} -> {OUT_DIR}/bertadp_hardneg_test.csv")
     print(f"all  hard negatives: {len(hard)} -> {OUT_DIR}/bertadp_hardneg_all.csv")
     print("these are all non-ADPs (Label 0); any BertADP Prediction=1 is a false positive")
