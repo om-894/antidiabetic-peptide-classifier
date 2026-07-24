@@ -215,8 +215,6 @@ def main():
         w.writeheader()
         w.writerows(rows)
 
-    print(f"\n-> wrote {OUT_CSV}  ({len(rows)} jobs)")
-
 
 if __name__ == "__main__":
     main()
