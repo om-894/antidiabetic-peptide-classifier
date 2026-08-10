@@ -11,7 +11,7 @@ Why   HADDOCK docked each peptide into DPP-IV and handed back a folder of model 
 What  re-derive every model's HADDOCK score from the energies in its PDB header, average
       per pose-cluster, and keep the best (most negative = tightest predicted binder).
 
-INPUT         ~/Downloads/<id>-<name>_summary.tgz  -> one run per peptide, holds its cluster PDBs
+INPUT         docking/haddock_runs/<id>-<name>_summary.tgz  -> one run per peptide, holds its cluster PDBs
 OUTPUT        docking/haddock_scores.csv
 """
 
@@ -27,7 +27,7 @@ from statistics import mean, pstdev # population sd -> matches haddock's own rep
 # --------------------------------------------------------------------------- #
 
 # find the downloaded files in my downloads folder
-ARCHIVE_DIR = os.path.expanduser(os.environ.get("HADDOCK_DIR", "~/Downloads"))
+ARCHIVE_DIR = os.path.expanduser(os.environ.get("HADDOCK_DIR", "docking/haddock_runs"))
 OUT_CSV = os.environ.get("OUT_CSV", "docking/haddock_scores.csv")
 
 # haddock never saves the final score, so rebuild it per model - a weighted sum of four
