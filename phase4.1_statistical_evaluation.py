@@ -42,6 +42,9 @@ MODELS = [
     ("ESM-2 / DoRA", "predictions/esm2_dora_predictions.npz", "esm_test"),
     ("Stacked ensemble", "predictions/stack_predictions.npz", "stack_test"),
     ("ESM-2 / DoRA (Basith negatives)", "predictions/esm2_dora_basith_predictions.npz", "esm_test"),
+    ("XGBoost (tuned)", "predictions/base_tree_predictions_tuned.npz", "xgb_test"),
+    ("Random Forest (tuned)", "predictions/base_tree_predictions_tuned.npz", "rf_test"),
+    ("1D-CNN (tuned)", "predictions/base_cnn_predictions_tuned.npz", "cnn_test"),
 ]
 
 # --------------------------------------------------------------------------- #
