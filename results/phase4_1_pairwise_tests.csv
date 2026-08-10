@@ -1,0 +1,5 @@
+comparison,test,p_raw,p_holm,auc_a,auc_b,ci_a_lo,ci_a_hi,ci_b_lo,ci_b_hi,b,c,odds_ratio
+stack vs ESM-2 (Aim 3),DeLong,0.5092183696921959,0.66461181640625,0.8663,0.8769,0.8107,0.9218,0.8255,0.9282,,,
+stack vs ESM-2 (Aim 3),McNemar,0.332305908203125,0.66461181640625,,,,,,,6.0,11.0,0.545
+dual-neg vs Basith (ablation),DeLong,2.5145071457586525e-06,7.543521437275957e-06,0.8769,0.6579,0.8255,0.9282,0.5761,0.7396,,,
+dual-neg vs Basith (ablation),McNemar,7.288430776686282e-07,2.915372310674513e-06,,,,,,,45.0,9.0,5.0

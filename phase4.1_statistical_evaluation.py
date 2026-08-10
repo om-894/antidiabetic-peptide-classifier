@@ -26,9 +26,23 @@ import numpy as np
 import scipy.stats
 from sklearn.metrics import matthews_corrcoef
 from MLstatkit import Delong_test, Bootstrapping, AUC2OR # for DeLong, bootstrap CIs, Cohen's d
+import os
+import pandas as pd
 
 SEED, N_BOOT = 42, 1000 # fixed seed = reproducible; 1000 bootstrap resamples
 
+RESULTS_DIR = "results" # save numbers to results directory
+
+# every model scored on the identical 178-row test set
+MODELS = [
+    ("AAC + RF (baseline)", "predictions/aac_baseline_predictions.npz", "aac_test"),
+    ("Random Forest", "predictions/base_tree_predictions.npz", "rf_test"),
+    ("XGBoost", "predictions/base_tree_predictions.npz", "xgb_test"),
+    ("1D-CNN", "predictions/base_cnn_predictions.npz", "cnn_test"),
+    ("ESM-2 / DoRA", "predictions/esm2_dora_predictions.npz", "esm_test"),
+    ("Stacked ensemble", "predictions/stack_predictions.npz", "stack_test"),
+    ("ESM-2 / DoRA (Basith negatives)", "predictions/esm2_dora_basith_predictions.npz", "esm_test"),
+]
 
 # --------------------------------------------------------------------------- #
 # MCC confidence interval by bootstrap
@@ -140,80 +154,107 @@ def holm_bonferroni(pvals):
 # --------------------------------------------------------------------------- #
 
 def main():
-    # load the three sets of test-set probabilities
-    esm = np.load("predictions/esm2_dora_predictions.npz", allow_pickle=True)
-    stack = np.load("predictions/stack_predictions.npz", allow_pickle=True)
-    bas = np.load("predictions/esm2_dora_basith_predictions.npz", allow_pickle=True)
+    os.makedirs(RESULTS_DIR, exist_ok=True)
 
-    y = esm["y_test"].astype(int) # true labels (shared test set)
-    p_esm = esm["esm_test"].astype(float) # final model: dual-negative ESM-2
-    p_stk = stack["stack_test"].astype(float) # stacked ensemble
-    p_bas = bas["esm_test"].astype(float) # Basith-negative ESM-2
-    
-    # all three must be scored on the same 178 rows, or the comparisons are invalid
-    assert np.array_equal(stack["y_test"].astype(int), y)
-    assert np.array_equal(bas["y_test"].astype(int), y)
+    # load every model in MODELS. a missing npz is skipped
+    scored, y = [], None
+    for name, path, key in MODELS:
+        if not os.path.exists(path):
+            print(f"[skip] {name}: {path} not found")
+            continue
+        d = np.load(path, allow_pickle=True)
+        if y is None:
+            y = d["y_test"].astype(int) # true labels (shared test set)
+
+        # same 178 rows in the same order, or the paired tests are invalid
+        assert np.array_equal(d["y_test"].astype(int), y), f"{name} scored on a different test set"
+        scored.append((name, d[key].astype(float)))
+
     print(f"test set: {len(y)} rows ({y.sum()} positive)\n")
 
     # 1) Bootstrap 95% CIs (MLstatkit for acc/F1/AUC, manual for MCC)
-    # Each metric is reported as: point estimate [lower bound, upper bound].
+    # Each metric is reported as a point estimate [lower bound, upper bound].
     print("Bootstrap 95% CIs (point [lo, hi]):")
-    for name, p in [("ESM-2 (final)", p_esm), ("stack", p_stk)]:
-        out = []
-        for label, key in [("ACC", "accuracy"), ("F1", "f1"), ("AUC", "roc_auc")]:
+    ci_rows = [] # one row per model, becomes table 3-1
+    for name, p in scored:
+        row, out = {"model": name}, []
+        for label, key, kw in [("ACC", "accuracy", {}),
+                               ("F1",  "f1",       {"average": "binary"}),
+                               ("AUC", "roc_auc",  {})]:
 
-            # MLstatkit's Bootstrapping returns the point estimate and the 95% CI for the requested metric
-            s, lo, hi = Bootstrapping(y, p, key, n_bootstraps=N_BOOT, random_state=SEED) 
+            # average="binary" is required; MLstatkit defaults to macro, ~0.02 lower
+            # and inconsistent with the F1 every notebook here reports
+            s, lo, hi = Bootstrapping(y, p, key, n_bootstraps=N_BOOT, random_state=SEED, **kw)
+            row |= {label: round(s, 4), f"{label}_lo": round(lo, 4), f"{label}_hi": round(hi, 4)}
             out.append(f"{label} {s:.3f} [{lo:.3f}, {hi:.3f}]")
-        s, lo, hi = bootstrap_mcc(y, p)
+
+        s, lo, hi = bootstrap_mcc(y, p) # MLstatkit has no MCC
+        row |= {"MCC": round(s, 4), "MCC_lo": round(lo, 4), "MCC_hi": round(hi, 4)} # |= merges dicts into another one in its place
         out.append(f"MCC {s:.3f} [{lo:.3f}, {hi:.3f}]")
-        print(f"  {name:14s} " + " | ".join(out)) # print all metrics for this model on one line
+
+        row |= {"ECE": round(ece(y, p), 4), "Brier": round(brier(y, p), 4)}
+        ci_rows.append(row)
+        print(f"  {name:34s} " + " | ".join(out)) # all metrics for this model on one line
 
     # 2) Effect size: Cohen's d derived from each model's AUC
     # A p-value says whether a difference exists; an effect size says how large.
     # AUC2OR converts an AUC to Cohen's d (the standardised separation between the
     # positive and negative score distributions) under a binormal assumption.
     print("\nEffect size (Cohen's d from AUC):")
-    for name, p in [("ESM-2 (final)", p_esm), ("stack", p_stk), ("basith", p_bas)]:
-        auc = Bootstrapping(y, p, "roc_auc", n_bootstraps=1, random_state=SEED)[0]
-        
-        # AUC2OR returns Cohen's d and the odds ratio (OR) for a given AUC. 
-        # The underscore is used to ignore the first return value, which is not needed here.
-        _, d, _, OR = AUC2OR(auc, return_all=True)
-        print(f"  {name:14s} AUC {auc:.3f} -> Cohen's d {d:.2f}, odds ratio {OR:.2f}")
+    for row in ci_rows:
+        _, d, _, OR = AUC2OR(row["AUC"], return_all=True) # reuse the AUC from step 1
+        row |= {"cohens_d": round(d, 3), "odds_ratio": round(OR, 2)}
+        print(f"  {row['model']:34s} AUC {row['AUC']:.3f} -> Cohen's d {d:.2f}, odds ratio {OR:.2f}")
 
     # 3) The two internal comparisons
-    # DeLong's test  -> is the AUC difference significant (correlated ROC curves)?
-    # McNemar's test -> do the label predictions differ on matched samples?
+    # DeLong's test asks whether the AUC difference is significant (correlated ROC curves)
+    # McNemar's test asks whether the label predictions differ on matched samples
+    P = dict(scored)
     comparisons = [
-        ("stack vs ESM-2 (Aim 3)",        p_stk, p_esm), # does the ensemble help?
-        ("dual-neg vs Basith (ablation)", p_esm, p_bas), # does the negative class help?
+        ("stack vs ESM-2 (Aim 3)", P["Stacked ensemble"], P["ESM-2 / DoRA"]), # does the ensemble help?
+        ("dual-neg vs Basith (ablation)", P["ESM-2 / DoRA"], P["ESM-2 / DoRA (Basith negatives)"]), # does the negative class help?
     ]
     print("\nPairwise comparisons:")
     raw_p, rows = [], []
     for label, pa, pb in comparisons:
-        
+
         # DeLong returns z-stat, p-value, 95% CIs and AUCs for both models
-        z, dp, ci_a, ci_b, auc_a, auc_b, _ = Delong_test(
+        _, dp, ci_a, ci_b, auc_a, auc_b, _ = Delong_test(
             y, pa, pb, return_ci=True, return_auc=True, random_state=SEED)
-        
-        # McNemar returns p-value, counts of discordant pairs, and odds ratio
+
+        # McNemar returns p-value, counts of discordant pairs and odds ratio
         mp, b, c, odds = mcnemar(y, (pa > 0.5).astype(int), (pb > 0.5).astype(int))
         raw_p += [dp, mp] # collect all p-values for correction
-        rows.append((label, dp, auc_a, auc_b, ci_a, ci_b, mp, odds))
-    
+        rows.append((label, dp, auc_a, auc_b, ci_a, ci_b, mp, b, c, odds))
+
     # Apply Holm-Bonferroni correction to the raw p-values from all tests
     adj = holm_bonferroni(np.array(raw_p)) # correct across all 4 tests at once
-    
-    # Print the results of each comparison, including the adjusted p-values
-    for i, (label, dp, auc_a, auc_b, ci_a, ci_b, mp, odds) in enumerate(rows):
+
+    # Print the results of each comparison, including the adjusted p-values.
+    # .4g not .4f, so 4e-05 doesn't print as 0.0000.
+    test_rows = [] # one row per test, becomes the pairwise-tests CSV
+    for i, (label, dp, auc_a, auc_b, ci_a, ci_b, mp, b, c, odds) in enumerate(rows):
         print(f"\n  {label}")
         print(f"    DeLong : AUC {auc_a:.3f} [{ci_a[0]:.3f}, {ci_a[1]:.3f}] vs "
-              f"{auc_b:.3f} [{ci_b[0]:.3f}, {ci_b[1]:.3f}] | p={dp:.4f} (Holm {adj[2*i]:.4f})")
-        print(f"    McNemar: p={mp:.4f} (Holm {adj[2*i+1]:.4f}) | odds ratio {odds:.2f}")
+              f"{auc_b:.3f} [{ci_b[0]:.3f}, {ci_b[1]:.3f}] | p={dp:.4g} (Holm {adj[2*i]:.4g})")
+        print(f"    McNemar: p={mp:.4g} (Holm {adj[2*i+1]:.4g}) | {b} vs {c} discordant | OR {odds:.2f}")
 
-    # 4) Calibration of the final model
-    print(f"\nCalibration (ESM-2 final): ECE {ece(y, p_esm):.3f} | Brier {brier(y, p_esm):.3f}")
+        # keys differ per test; pandas fills the gaps
+        test_rows += [
+            {"comparison": label, "test": "DeLong", "p_raw": dp, "p_holm": adj[2*i],
+             "auc_a": round(auc_a, 4), "auc_b": round(auc_b, 4),
+             "ci_a_lo": round(ci_a[0], 4), "ci_a_hi": round(ci_a[1], 4),
+             "ci_b_lo": round(ci_b[0], 4), "ci_b_hi": round(ci_b[1], 4)},
+            {"comparison": label, "test": "McNemar", "p_raw": mp, "p_holm": adj[2*i+1],
+             "b": b, "c": c, "odds_ratio": round(odds, 3)},
+        ]
+
+    # 4) Save. metrics_ci.csv is Table 3-1; pairwise_tests.csv is the Aim 3 and ablation stats.
+    f1 = os.path.join(RESULTS_DIR, "phase4_1_metrics_ci.csv")
+    f2 = os.path.join(RESULTS_DIR, "phase4_1_pairwise_tests.csv")
+    pd.DataFrame(ci_rows).to_csv(f1, index=False)
+    pd.DataFrame(test_rows).to_csv(f2, index=False)
+    print(f"\nsaved -> {f1}\nsaved -> {f2}")
 
 
 if __name__ == "__main__":
