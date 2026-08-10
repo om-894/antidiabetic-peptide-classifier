@@ -17,9 +17,12 @@ segfault together on macOS), selected with the MODELS env var:
 import os
 import numpy as np
 from sklearn.metrics import roc_auc_score
+import pandas as pd
 
 SEEDS = [42, 43, 44, 45, 46] # 5 random seeds
-MODELS = os.environ.get("MODELS", "xgb,rf,cnn").split(",")
+MODELS = os.environ.get("MODELS", "xgb,rf,cnn,esm2").split(",")
+RESULTS_DIR = "results"
+ROWS = [] # collected across models, appended so both MODELS runs land in one file
 
 # Load the fused vectors and labels, split into train/test by the original split
 def load_fused():
@@ -30,8 +33,12 @@ def load_fused():
 
 # Report the mean and SD of test AUC across seeds
 def report(name, aucs):
-    print(f"  {name:6s} test AUC {np.mean(aucs):.3f} +/- {np.std(aucs):.3f}  "
-          f"(seeds {SEEDS[0]}-{SEEDS[-1]})")
+    # ddof=1 gives the sample SD (N-1 in denominator) rather than population SD (N)
+    mu, sd = float(np.mean(aucs)), float(np.std(aucs, ddof=1))
+    print(f"  {name:6s} test AUC {mu:.3f} +/- {sd:.3f}  (seeds {SEEDS[0]}-{SEEDS[-1]})")
+    ROWS.append({"model": name, "mean_auc": round(mu, 4), "sd_auc": round(sd, 4),
+                 "n_seeds": len(SEEDS), "seeds": ",".join(map(str, SEEDS)),
+                 "per_seed_auc": ",".join(f"{a:.4f}" for a in aucs)})
 
 
 # trees: refit on full train under each seed, score the test set
@@ -56,6 +63,16 @@ def rf_stability(Xtr, ytr, Xte, yte):
         aucs.append(roc_auc_score(yte, m.predict_proba(Xte)[:, 1]))
     report("rf", aucs)
 
+# ESM-2 seeds were fine-tuned on Viking so read the saved predictions rather than refitting
+def esm_stability():
+    aucs = []
+    for s in SEEDS:
+        f = f"predictions/esm2_dora_seed{s}_predictions.npz"
+        if not os.path.exists(f):
+            print(f"[skip] esm2: {f} missing"); return
+        d = np.load(f, allow_pickle=True)
+        aucs.append(roc_auc_score(d["y_test"].astype(int), d["esm_test"].astype(float)))
+    report("esm2", aucs)
 
 # CNN: same idea, one full fit per seed
 def cnn_stability(Xtr_raw, ytr, Xte_raw, yte):
@@ -117,6 +134,12 @@ def main():
     if "xgb" in MODELS: xgb_stability(Xtr, ytr, Xte, yte)
     if "rf"  in MODELS: rf_stability(Xtr, ytr, Xte, yte)
     if "cnn" in MODELS: cnn_stability(Xtr, ytr, Xte, yte)
+    if "esm2" in MODELS: esm_stability() # reads npz. I dont need pytorch or xgboost
+
+    # appends so the separate trees and CNN runs end up in one file
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    f = os.path.join(RESULTS_DIR, "phase4_2_seed_stability.csv")
+    pd.DataFrame(ROWS).to_csv(f, mode="a", header=not os.path.exists(f), index=False)
 
 
 if __name__ == "__main__":
