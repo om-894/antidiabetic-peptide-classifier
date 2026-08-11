@@ -9,9 +9,9 @@ Swiss-Prot fragments hence the much worse FPR on hard than soft negatives.
 
 INPUT   benchmark/bertadp_hardneg_test_pred.csv
         benchmark/bertadp_softneg_test_pred.csv
-OUTPUT  benchmark/charge_shortcut.csv + benchmark/charge_shortcut.png
+OUTPUT  benchmark/charge_shortcut.csv + benchmark/charge_vs_length_control.csv
 
-REQUIREMENTS  pip install numpy pandas scikit-learn matplotlib peptides
+REQUIREMENTS  pip install numpy pandas scikit-learn peptides
 """
 
 # imports
@@ -19,13 +19,11 @@ import numpy as np
 import pandas as pd
 import peptides
 from sklearn.metrics import roc_auc_score
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 
 # files to read in defined as gloabls
 HARD = "benchmark/bertadp_hardneg_test_pred.csv"
 SOFT = "benchmark/bertadp_softneg_test_pred.csv"
+HARD_ALL = "benchmark/bertadp_hardneg_all_pred.csv" # all 328, for the length control
 
 
 def main():
@@ -52,18 +50,28 @@ def main():
     print(f"AUC of net charge alone predicting BertADP's rejection: {auc:.3f}")
     print(f"correlation net charge vs BertADP P(ADP): r = {r:+.3f}")
 
-    # plot figure for charge vs BertADP's probability, split by negative type
-    plt.figure(figsize=(5, 3.5))
-    for t, m, c in [("hard", "o", "firebrick"), ("soft", "^", "steelblue")]:
-        g = d[d.type == t]
-        plt.scatter(g.charge, g.Positive_Probability, marker=m, c=c, alpha=0.75,
-                    label=f"{t} negatives")
-    plt.axhline(0.5, color="k", ls="--", lw=0.8) # BertADP's decision boundary
-    plt.xlabel("net charge (pH 7.4)"); plt.ylabel("BertADP P(ADP)")
-    plt.title(f"BertADP tracks net charge (AUC {auc:.2f})")
-    plt.legend(); plt.tight_layout()
-    plt.savefig("benchmark/charge_shortcut.png", dpi=150)
-    print("saved -> benchmark/charge_shortcut.csv + charge_shortcut.png")
+    # charge or just length? Xie's negatives are 18-35 aa, mine are length-matched
+    allh = pd.read_csv(HARD_ALL, keep_default_na=False)
+    allh["charge"] = allh.Sequence.map(lambda s: peptides.Peptide(s).charge(pH=7.4))
+    allh["length"] = allh.Sequence.str.len()
+
+    ctrl = []
+    for lab, lo, hi in [("all", 2, 41), ("2-9aa", 2, 9), ("10-14aa", 10, 14), ("15-41aa", 15, 41)]:
+        sub = allh[allh.length.between(lo, hi)]
+        w = sub.Prediction == 1 # every row is a true non-ADP
+        if w.nunique() < 2:
+            continue
+        ctrl.append({"band": lab, "n": len(sub), "false_pos": int(w.sum()),
+                     "FPR": w.mean(),
+                     "charge_auc": roc_auc_score(w, -sub.charge),
+                     "length_auc": roc_auc_score(w, -sub.length),
+                     "mean_charge_FP": sub.loc[w, "charge"].mean(),
+                     "mean_charge_TN": sub.loc[~w, "charge"].mean()})
+    ctrl = pd.DataFrame(ctrl)
+    ctrl.to_csv("benchmark/charge_vs_length_control.csv", index=False)
+    print("\ncharge vs length, all 328 hard negatives")
+    print(ctrl.to_string(index=False, float_format=lambda x: f"{x:.4f}"))
+    # the 15-41aa band overlaps Xie's own negative lengths, so a high FPR there rules out length
 
 
 if __name__ == "__main__":
