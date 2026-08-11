@@ -56,7 +56,7 @@ def main():
     allh["length"] = allh.Sequence.str.len()
 
     ctrl = []
-    for lab, lo, hi in [("all", 2, 41), ("2-9aa", 2, 9), ("10-14aa", 10, 14), ("15-41aa", 15, 41)]:
+    for lab, lo, hi in [("all", 2, 41), ("3-9aa", 3, 9), ("10aa", 10, 10), ("20aa", 20, 20)]:
         sub = allh[allh.length.between(lo, hi)]
         w = sub.Prediction == 1 # every row is a true non-ADP
         if w.nunique() < 2:
@@ -64,14 +64,23 @@ def main():
         ctrl.append({"band": lab, "n": len(sub), "false_pos": int(w.sum()),
                      "FPR": w.mean(),
                      "charge_auc": roc_auc_score(w, -sub.charge),
-                     "length_auc": roc_auc_score(w, -sub.length),
+                     # length can't discriminate where every peptide in the band is the same length
+                     "length_auc": roc_auc_score(w, -sub.length) if sub.length.nunique() > 1 else None,
                      "mean_charge_FP": sub.loc[w, "charge"].mean(),
                      "mean_charge_TN": sub.loc[~w, "charge"].mean()})
     ctrl = pd.DataFrame(ctrl)
     ctrl.to_csv("benchmark/charge_vs_length_control.csv", index=False)
     print("\ncharge vs length, all 328 hard negatives")
     print(ctrl.to_string(index=False, float_format=lambda x: f"{x:.4f}"))
-    # the 15-41aa band overlaps Xie's own negative lengths, so a high FPR there rules out length
+
+    # per-length FPR; the point is that no length escapes
+    per_len = allh.assign(fp=allh.Prediction == 1).groupby("length").agg(
+        n=("fp", "size"), false_pos=("fp", "sum"))
+    per_len["FPR"] = per_len.false_pos / per_len.n
+    per_len.to_csv("benchmark/fpr_by_length.csv")
+    print("\nFPR by length")
+    print(per_len.to_string(float_format=lambda x: f"{x:.3f}"))
+    print("saved -> benchmark/charge_vs_length_control.csv + fpr_by_length.csv")
 
 
 if __name__ == "__main__":
