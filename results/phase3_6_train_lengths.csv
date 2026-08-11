@@ -1,0 +1,4 @@
+set,n,mean_len
+positives (both runs),873,13.524627720504009
+dual negatives,881,13.578887627695801
+Basith negatives,873,26.691867124856817

@@ -76,3 +76,28 @@ for name, p in [("dual-neg", dual["esm_test"]), ("basith", bas["esm_test"])]:
                  "n_pos": int(pos.sum()), "n_hard": int(hard.sum()), "n_soft": int(soft.sum())})
 pd.DataFrame(rows).to_csv(os.path.join(OUT, "phase3_6_ablation.csv"), index=False)
 print("saved -> results/phase3_6_ablation.csv")
+
+# length control: the Basith pool is not length-matched to the positives, so check
+# whether its errors are a length shortcut rather than a negative-class effect
+bsplit = pd.read_csv(os.path.join(HERE, "dataset_split_basith.csv"), keep_default_na=False)
+trlen = lambda df, lab: df[(df.Split == "train") & (df.Label == lab)].Sequence.str.len()
+train_rows = [{"set": "positives (both runs)", "n": len(trlen(ds, 1)), "mean_len": trlen(ds, 1).mean()},
+              {"set": "dual negatives", "n": len(trlen(ds, 0)), "mean_len": trlen(ds, 0).mean()},
+              {"set": "Basith negatives", "n": len(trlen(bsplit, 0)), "mean_len": trlen(bsplit, 0).mean()}]
+
+# restrict to the 85 test negatives; with positives included the true-label signal leaks in
+L = test.Sequence.str.len().to_numpy()
+neg = y == 0
+rows = [{"model": "control: length vs true label", "length_auc": roc_auc_score(y, -L),
+         "mean_len_FP": None, "mean_len_TN": None, "n_FP": None, "n": len(y)}]
+for name, p in [("dual-neg", dual["esm_test"]), ("basith", bas["esm_test"])]:
+    fp = (p[neg] > 0.5).astype(int) # 1 = negative wrongly called ADP
+    rows.append({"model": name, "length_auc": roc_auc_score(fp, -L[neg]),
+                 "mean_len_FP": L[neg][fp == 1].mean(), "mean_len_TN": L[neg][fp == 0].mean(),
+                 "n_FP": int(fp.sum()), "n": int(neg.sum())})
+
+pd.DataFrame(train_rows).to_csv(os.path.join(OUT, "phase3_6_train_lengths.csv"), index=False)
+pd.DataFrame(rows).to_csv(os.path.join(OUT, "phase3_6_length_control.csv"), index=False)
+print("\ntraining-set lengths"); print(pd.DataFrame(train_rows).to_string(index=False))
+print("\nlength control, test negatives only"); print(pd.DataFrame(rows).to_string(index=False))
+print("saved -> results/phase3_6_train_lengths.csv + phase3_6_length_control.csv")
