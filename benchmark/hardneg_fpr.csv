@@ -1,4 +1,4 @@
 model,FPR,CI_low,CI_high,false_pos,n
-BertADP (SOTA),0.867,0.756,0.956,39,45
-Basith-neg ESM-2,0.933,0.867,1.0,42,45
-dual-neg ESM-2 (ours),0.467,0.311,0.622,21,45
+BertADP,0.867,0.756,0.956,39,45
+Basith-neg ESM-2,0.933,0.844,1.0,42,45
+dual-neg ESM-2,0.467,0.333,0.622,21,45

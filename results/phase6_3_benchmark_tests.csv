@@ -1,0 +1,3 @@
+metric,value,ci_low,ci_high,n,false_pos,mean_prob,b_bert_right_ours_wrong,c_bert_wrong_ours_right
+FPR_all_hard_negatives,0.9237804878048781,0.8963414634146342,0.9512195121951219,328,303.0,0.8920106607789635,,
+mcnemar_bertadp_vs_dual,4.00543212890625e-05,,,45,,,1.0,19.0

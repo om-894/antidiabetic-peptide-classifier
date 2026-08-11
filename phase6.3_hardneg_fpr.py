@@ -10,24 +10,23 @@ INPUT   benchmark/bertadp_hardneg_test_pred.csv         BertADP predictions (Pha
         predictions/esm2_dora_predictions.npz           dual-negative ESM-2
         predictions/esm2_dora_basith_predictions.npz    Basith-negative ESM-2
         data/dataset_split.csv                          locates the 45 test hard negatives
-OUTPUT  benchmark/hardneg_fpr.csv + benchmark/hardneg_fpr.png
+OUTPUT  benchmark/hardneg_fpr.csv + results/phase6_3_benchmark_tests.csv
 
-REQUIREMENTS  pip install numpy pandas scipy matplotlib
+REQUIREMENTS  pip install numpy pandas scipy
 """
 
 # imports
 import numpy as np
 import pandas as pd
 import scipy.stats
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+import os
 
 # constants and outputs
 BERT = "benchmark/bertadp_hardneg_test_pred.csv"
 ESM = "predictions/esm2_dora_predictions.npz"
 BAS = "predictions/esm2_dora_basith_predictions.npz"
 SPLIT = "data/dataset_split.csv"
+BERT_ALL = "benchmark/bertadp_hardneg_all_pred.csv" # all 328, not just the 45 in the test split
 SEED, NBOOT = 42, 1000
 
 
@@ -58,7 +57,7 @@ def npz_hardneg_preds(path, hardnegs):
 
 
 def main():
-    # the 45 hard negatives from the held-out test set - all true non-ADPs
+    # the 45 hard negatives from the held-out test set which are all true non-ADPs
     split = pd.read_csv(SPLIT)
 
     # the test set hard negatives are the only non-ADPs in the test set that were also in the training set
@@ -72,7 +71,7 @@ def main():
     bas  = npz_hardneg_preds(BAS, hardnegs)
 
     # only keep peptides all three models scored, so the comparison is like-for-like
-    seqs = [s for s in hardnegs if s in bpred and s in dual and s in bas]
+    seqs = sorted(s for s in hardnegs if s in bpred and s in dual and s in bas)
 
     # b represents BertADP, du means dual-negative ESM-2, ba means Basith-negative ESM-2
     b  = [bpred[s] for s in seqs]
@@ -82,33 +81,41 @@ def main():
 
     # FPR + CI for each model and made into a table
     rows = []
-    for name, pr in [("BertADP (SOTA)", b), ("Basith-neg ESM-2", ba), ("dual-neg ESM-2 (ours)", du)]:
+    for name, pr in [("BertADP", b), ("Basith-neg ESM-2", ba), ("dual-neg ESM-2", du)]:
         f, lo, hi = fpr_ci(pr)
         rows.append({"model": name, "FPR": round(f, 3), "CI_low": round(lo, 3),
                      "CI_high": round(hi, 3), "false_pos": int(np.sum(pr)), "n": len(pr)})
     tab = pd.DataFrame(rows)
     tab.to_csv("benchmark/hardneg_fpr.csv", index=False)
+    print("saved -> benchmark/hardneg_fpr.csv")
     print(tab.to_string(index=False))
 
-    # McNemar: is the BertADP vs dual-negative gap real, or could it be chance?
-    # On a hard negative, getting it "right" means predicting non-ADP (0). The test only
+    # FPR across all 328 hard negatives, not just the 45 in the test split
+    ball = pd.read_csv(BERT_ALL, keep_default_na=False) # "NA" is Asn-Ala, not missing
+    wrong = ball.Prediction == 1
+    fa, la, ha = fpr_ci(wrong.astype(int).tolist())
+    mp = ball.Positive_Probability.mean()
+    print(f"\nBertADP on all {len(ball)} hard negatives: FPR {fa:.4f} [{la:.3f}, {ha:.3f}] "
+          f"({int(wrong.sum())} false positives, mean P(ADP) {mp:.3f})")
+
+    # McNemar asks is the BertADP vs dual-negative gap real, or could it be chance?
+    # On a hard negative, getting it right means predicting non-ADP (0). The test only
     # looks at peptides where the two models disagree (b and c) and asks whether that
     # split is lopsided rather than the 50/50 you'd expect if they were equally good.
     b_ok, d_ok = np.array(b) == 0, np.array(du) == 0
-    bc = int(np.sum(b_ok & ~d_ok)) # BertADP right, ours wrong
-    cc = int(np.sum(~b_ok & d_ok)) # BertADP wrong, ours right
+    bc = int(np.sum(b_ok & ~d_ok)) # BertADP right, mine wrong
+    cc = int(np.sum(~b_ok & d_ok)) # BertADP wrong, mine right
     p = scipy.stats.binomtest(min(bc, cc), bc + cc, 0.5).pvalue if (bc + cc) else 1.0
-    print(f"\nMcNemar (BertADP vs dual-neg): discordant b={bc}, c={cc}, p={p:.4g}")
+    print(f"McNemar (BertADP vs dual-neg): discordant b={bc}, c={cc}, p={p:.4g}")
 
-    # bar chart of the three FPRs with their CIs. others red, ours blue
-    plt.figure(figsize=(5, 3))
-    plt.bar(tab.model, tab.FPR, capsize=4,
-            yerr=[tab.FPR - tab.CI_low, tab.CI_high - tab.FPR],   # asymmetric error bars from the CI
-            color=["firebrick", "firebrick", "steelblue"])
-    plt.ylabel("false-positive rate on hard negatives"); plt.ylim(0, 1)
-    plt.xticks(rotation=15, ha="right"); plt.tight_layout()
-    plt.savefig("benchmark/hardneg_fpr.png", dpi=150)
-    print("saved -> benchmark/hardneg_fpr.csv + hardneg_fpr.png")
+    # save both numbers to results folder
+    os.makedirs("results", exist_ok=True)
+    pd.DataFrame([
+        {"metric": "FPR_all_hard_negatives", "value": fa, "ci_low": la, "ci_high": ha,
+         "n": len(ball), "false_pos": int(wrong.sum()), "mean_prob": mp},
+        {"metric": "mcnemar_bertadp_vs_dual", "value": p, "n": len(seqs),
+         "b_bert_right_ours_wrong": bc, "c_bert_wrong_ours_right": cc},
+    ]).to_csv("results/phase6_3_benchmark_tests.csv", index=False)
 
 
 if __name__ == "__main__":
