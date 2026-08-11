@@ -16,6 +16,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 DATASET_SPLIT = os.path.join(HERE, "..", "data", "dataset_split.csv")
 DUAL_NPZ   = os.path.join(HERE, "..", "predictions", "esm2_dora_predictions.npz")
 BASITH_NPZ = os.path.join(HERE, "..", "predictions", "esm2_dora_basith_predictions.npz")
+OUT = os.path.join(HERE, "..", "results")
 
 # test set (from the main split) tells us the NegType of each test row.
 ds = pd.read_csv(DATASET_SPLIT)
@@ -60,13 +61,18 @@ fh_bas  = (bas["esm_test"][hard]  > 0.5).mean()
 print(f"\nHEADLINE: false-positive rate on the {hard.sum()} HARD negatives - "
       f"dual-neg {fh_dual:.1%} vs Basith {fh_bas:.1%}")
 
-
-
-
-# test set: 93 positives | 45 hard neg | 40 soft neg
-
-# model           AUC    ACC    MCC  recall  FPR_hard  FPR_soft
-# my dual-neg   0.877  0.815  0.633   0.892     0.467     0.050
-# basith        0.658  0.612  0.237   0.860     0.933     0.350
-
-# HEADLINE: false-positive rate on the 45 HARD negatives - dual-neg 46.7% vs Basith 93.3%
+# save ablation numbers to be used in results
+os.makedirs(OUT, exist_ok=True)
+rows = []
+for name, p in [("dual-neg", dual["esm_test"]), ("basith", bas["esm_test"])]:
+    yhat = p > 0.5
+    rows.append({"model": name,
+                 "AUC": roc_auc_score(y, p),
+                 "ACC": accuracy_score(y, yhat),
+                 "MCC": matthews_corrcoef(y, yhat),
+                 "recall": float(yhat[pos].mean()),
+                 "FPR_hard": float(yhat[hard].mean()),
+                 "FPR_soft": float(yhat[soft].mean()),
+                 "n_pos": int(pos.sum()), "n_hard": int(hard.sum()), "n_soft": int(soft.sum())})
+pd.DataFrame(rows).to_csv(os.path.join(OUT, "phase3_6_ablation.csv"), index=False)
+print("saved -> results/phase3_6_ablation.csv")
