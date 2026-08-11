@@ -88,13 +88,16 @@ train_rows = [{"set": "positives (both runs)", "n": len(trlen(ds, 1)), "mean_len
 # restrict to the 85 test negatives; with positives included the true-label signal leaks in
 L = test.Sequence.str.len().to_numpy()
 neg = y == 0
-rows = [{"model": "control: length vs true label", "length_auc": roc_auc_score(y, -L),
-         "mean_len_FP": None, "mean_len_TN": None, "n_FP": None, "n": len(y)}]
+rows = [{"model": "control: length vs true label", "subset": "all test rows",
+         "length_auc": roc_auc_score(y, -L), "n": len(y)}]
 for name, p in [("dual-neg", dual["esm_test"]), ("basith", bas["esm_test"])]:
-    fp = (p[neg] > 0.5).astype(int) # 1 = negative wrongly called ADP
-    rows.append({"model": name, "length_auc": roc_auc_score(fp, -L[neg]),
-                 "mean_len_FP": L[neg][fp == 1].mean(), "mean_len_TN": L[neg][fp == 0].mean(),
-                 "n_FP": int(fp.sum()), "n": int(neg.sum())})
+    for grp, m in [("all negatives", neg), ("hard", neg & hard), ("soft", neg & soft)]:
+        fp = (p[m] > 0.5).astype(int) # 1 = negative wrongly called ADP
+        if len(set(fp)) < 2: # AUC undefined when every call is the same
+            continue
+        rows.append({"model": name, "subset": grp, "length_auc": roc_auc_score(fp, -L[m]),
+                     "mean_len_FP": L[m][fp == 1].mean(), "mean_len_TN": L[m][fp == 0].mean(),
+                     "n_FP": int(fp.sum()), "n": int(m.sum())})
 
 pd.DataFrame(train_rows).to_csv(os.path.join(OUT, "phase3_6_train_lengths.csv"), index=False)
 pd.DataFrame(rows).to_csv(os.path.join(OUT, "phase3_6_length_control.csv"), index=False)
