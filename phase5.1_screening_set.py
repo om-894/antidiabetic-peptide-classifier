@@ -61,22 +61,23 @@ SPLIT_CSV   = "data/dataset_split.csv"      # train/test set: length range + wha
 OUT_DIR     = "screening"                   # where the candidate list is written
 STANDARD_AA = set("ACDEFGHIKLMNPQRSTVWY")   # the 20 standard amino acids; fragments with anything else are dropped
 
-# Dietary proteins to digest, as {name: UniProt accession}. These are the classic
-# sources of food-derived anti-diabetic / DPP-IV-inhibitory peptides in the
-# literature e.g. cow's milk & whey, egg, soy, serum etc.
+# Dietary proteins to digest, as {name: UniProt accession}. Major constituents of
+# milk, egg and soy. Serum albumin and lysozyme are included on abundance, not on
+# DPP-IV evidence. P25974 is the beta-conglycinin beta subunit and P04776 is
+# glycinin G1 only, both being multi-subunit families. Sequences include signal peptides.
 SOURCE_PROTEINS = {
-    "bovine_beta_casein":        "P02666",
-    "bovine_alpha_s1_casein":    "P02662",
-    "bovine_alpha_s2_casein":    "P02663",
-    "bovine_kappa_casein":       "P02668",
+    "bovine_beta_casein": "P02666",
+    "bovine_alpha_s1_casein": "P02662",
+    "bovine_alpha_s2_casein": "P02663",
+    "bovine_kappa_casein": "P02668",
     "bovine_beta_lactoglobulin": "P02754",
-    "bovine_alpha_lactalbumin":  "P00711",
-    "bovine_serum_albumin":      "P02769",
-    "bovine_lactoferrin":        "P24627",
-    "chicken_ovalbumin":         "P01012",
-    "chicken_lysozyme_c":        "P00698",
-    "soybean_glycinin_g1":       "P04776",
-    "soybean_beta_conglycinin":  "P25974",
+    "bovine_alpha_lactalbumin": "P00711",
+    "bovine_serum_albumin": "P02769",
+    "bovine_lactoferrin": "P24627",
+    "chicken_ovalbumin": "P01012",
+    "chicken_lysozyme_c": "P00698",
+    "soybean_glycinin_g1": "P04776",
+    "soybean_beta_conglycinin": "P25974",
 }
 
 MISSED_CLEAVAGES = 1      # real digestion is incomplete -> allow up to 1 uncut site (keeps some longer partial fragments)
