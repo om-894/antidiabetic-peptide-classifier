@@ -33,6 +33,8 @@ import joblib
 import numpy as np
 import pandas as pd
 import peptides
+import os
+from difflib import SequenceMatcher
 
 # --------------------------------------------------------------------------- #
 # CONFIG
@@ -43,6 +45,7 @@ FUSION_NPZ = "fusion_vectors.npz" # for the saved train z-score stats
 XGB_MODEL  = "models/base_xgb.joblib" # base learner (matches the multi-seed results)
 
 OUT_RANKED    = "screening/screening_ranked.csv"
+SPLIT = "data/dataset_split.csv" # training positives, for the novelty check
 OUT_DISCOVERY = "screening/screening_discovery.csv"
 OUT_SHORTLIST = "screening/screening_shortlist.csv"
 
@@ -135,13 +138,32 @@ def main():
     shortlist = out[out["high_confidence"]].reset_index(drop=True)
     shortlist.to_csv(OUT_SHORTLIST, index=False)
 
+    # nearest training positive for each discovery. peptides under 11 aa bypass CD-HIT,
+    # so this quantifies how novel the discovery set really is
+    split = pd.read_csv(SPLIT, keep_default_na=False)
+    pos = split[split.Label == 1].Sequence.tolist()
+
+    def nearest(s):
+        best = max(pos, key=lambda p: SequenceMatcher(None, s, p).ratio())
+        return best, SequenceMatcher(None, s, best).ratio()
+
+    nov = discovery[["peptide_id", "sequence", "length", "consensus"]].copy()
+    hits = [nearest(s) for s in nov.sequence]
+    nov["nn_sequence"] = [h[0] for h in hits]
+    nov["nn_similarity"] = [h[1] for h in hits]
+    os.makedirs("results", exist_ok=True)
+    nov.to_csv("results/phase5_3_novelty.csv", index=False)
+    print(f"novelty: median similarity to nearest training positive {nov.nn_similarity.median():.2f}, "
+          f"{(nov.nn_similarity < 0.70).mean():.0%} below 0.70")
+
     # Show how the funnel narrows, and whether the recovered known actives survive.
     print(f"ESM-2 P>0.5 : {(esm_prob >= 0.5).sum()}/{len(seqs)}")
     print(f"XGB   P>0.5 : {(xgb_prob >= 0.5).sum()}/{len(seqs)}")
     print(f"BOTH agree  : {len(shortlist)}/{len(seqs)}  (high-confidence shortlist)")
     print(f"DISCOVERY   : {len(discovery)}/{len(seqs)}  (consensus >= {DISCOVERY_THRESHOLD})")
 
-    # do the recovered known DPP-IV inhibitors survive the calibrated cutoff?
+    # do the documented DPP-IV inhibitors survive the calibrated cutoff? IPAVF and LPGF
+    # have measured IC50 values; EPYF and GPFPSIL are prediction-only, kept for reference
     known = ["GPFPSIL", "LPGF", "IPAVF", "EPYF"]
     print(f"known actives in discovery set: {discovery[discovery.sequence.isin(known)].sequence.tolist()}")
 
