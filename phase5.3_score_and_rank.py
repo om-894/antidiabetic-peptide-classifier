@@ -35,6 +35,7 @@ import pandas as pd
 import peptides
 import os
 from difflib import SequenceMatcher
+from scipy.stats import spearmanr
 
 # --------------------------------------------------------------------------- #
 # CONFIG
@@ -48,6 +49,9 @@ OUT_RANKED = "screening/screening_ranked.csv"
 SPLIT = "data/dataset_split.csv" # training positives, for the novelty check
 OUT_DISCOVERY = "screening/screening_discovery.csv"
 OUT_SHORTLIST = "screening/screening_shortlist.csv"
+OUT_NOVELTY = "results/phase5_3_novelty.csv"
+OUT_NOVELTY_SUM = "results/phase5_3_novelty_summary.csv"
+OUT_SCORE_FUNNEL = "results/phase5_3_score_funnel.csv"
 
 # Discovery cutoff. Phase 5.0's sweep recommends 0.87; 0.90 is the conservative
 # choice, the top calibration bin: 450 out-of-fold peptides at 90.9% positive.
@@ -139,39 +143,60 @@ def main():
     shortlist = out[out["high_confidence"]].reset_index(drop=True)
     shortlist.to_csv(OUT_SHORTLIST, index=False)
 
-    # nearest training positive for each discovery. peptides under 11 aa bypass CD-HIT,
-    # so this quantifies how novel the discovery set really is
+    # nearest training positive for every candidate, not just the discoveries, so the
+    # score-similarity relationship can be measured across the full ranking.
+    # peptides under 11 aa bypass CD-HIT, so this quantifies how novel the set really is
     split = pd.read_csv(SPLIT, keep_default_na=False)
-    pos = split[split.Label == 1].Sequence.tolist()
+    pos = split[(split.Label == 1) & (split.Split == "train")].Sequence.tolist()
 
-    def nearest(s):
-        best = max(pos, key=lambda p: SequenceMatcher(None, s, p).ratio())
-        return best, SequenceMatcher(None, s, best).ratio()
+    def nearest_all(cands):
+        # running max over positives. set_seq2 builds the index once per positive,
+        # and the quick_ratio bounds skip pairs that cannot beat the current best
+        best_r, best_s, sm = np.zeros(len(cands)), [""] * len(cands), SequenceMatcher()
+        for p in pos:
+            sm.set_seq2(p)
+            for i, s in enumerate(cands):
+                sm.set_seq1(s)
+                if sm.real_quick_ratio() <= best_r[i] or sm.quick_ratio() <= best_r[i]:
+                    continue
+                r = sm.ratio()
+                if r > best_r[i]:
+                    best_r[i], best_s[i] = r, p
+        return best_s, best_r
 
-    nov = discovery[["peptide_id", "sequence", "length", "consensus"]].copy()
-    hits = [nearest(s) for s in nov.sequence]
-    nov["nn_sequence"] = [h[0] for h in hits]
-    nov["nn_similarity"] = [h[1] for h in hits]
+    nov = out[["peptide_id", "sequence", "length", "consensus", "discovery"]].copy()
+    nov.insert(0, "rank", nov.index + 1) # consensus rank among all candidates
+    nov["nn_sequence"], nov["nn_similarity"] = nearest_all(nov.sequence.tolist())
     os.makedirs("results", exist_ok=True)
-    nov.to_csv("results/phase5_3_novelty.csv", index=False)
-    print(f"novelty: median similarity to nearest training positive {nov.nn_similarity.median():.2f}, "
-          f"{(nov.nn_similarity < 0.70).mean():.0%} below 0.70")
+    nov.to_csv(OUT_NOVELTY, index=False)
 
-    # Show how the funnel narrows, and whether the recovered known actives survive.
-    print(f"ESM-2 P>0.5 : {(esm_prob >= 0.5).sum()}/{len(seqs)}")
-    print(f"XGB   P>0.5 : {(xgb_prob >= 0.5).sum()}/{len(seqs)}")
-    print(f"BOTH agree  : {len(shortlist)}/{len(seqs)}  (high-confidence shortlist)")
-    print(f"DISCOVERY   : {len(discovery)}/{len(seqs)}  (consensus >= {DISCOVERY_THRESHOLD})")
+    d = nov[nov.discovery]
+    rho_a, p_a = spearmanr(nov.consensus, nov.nn_similarity)
+    rho_d, p_d = spearmanr(d.consensus, d.nn_similarity)
+    stats = [("n_train_positives", len(pos)), ("n_candidates", len(nov)), ("n_discoveries", len(d)),
+             ("median_nn_all", round(nov.nn_similarity.median(), 4)),
+             ("median_nn_discoveries", round(d.nn_similarity.median(), 4)),
+             ("pct_below_0.70_discoveries", round(100 * (d.nn_similarity < 0.70).mean(), 1)),
+             ("pct_at_or_above_0.90_discoveries", round(100 * (d.nn_similarity >= 0.90).mean(), 1)),
+             ("median_nn_short_discoveries", round(d.nn_similarity[d.length < 11].median(), 4)),
+             ("median_nn_long_discoveries", round(d.nn_similarity[d.length >= 11].median(), 4)),
+             ("n_short_discoveries", int((d.length < 11).sum())),
+             ("n_long_discoveries", int((d.length >= 11).sum())),
+             ("spearman_rho_all", round(rho_a, 4)), ("spearman_p_all", float(f"{p_a:.3g}")),
+             ("spearman_rho_discoveries", round(rho_d, 4)), ("spearman_p_discoveries", float(f"{p_d:.3g}"))]
+    pd.DataFrame(stats, columns=["quantity", "value"]).to_csv(OUT_NOVELTY_SUM, index=False)
+    print(f"novelty: median {d.nn_similarity.median():.2f}, "
+          f"{(d.nn_similarity < 0.70).mean():.0%} below 0.70 | "
+          f"score-similarity rho {rho_a:.3f} (all), {rho_d:.3f} (discoveries)")
 
-    # do the documented DPP-IV inhibitors survive the calibrated cutoff? IPAVF and LPGF
-    # have measured IC50 values; EPYF and GPFPSIL are prediction-only, kept for reference
-    known = ["GPFPSIL", "LPGF", "IPAVF", "EPYF"]
-    print(f"known actives in discovery set: {discovery[discovery.sequence.isin(known)].sequence.tolist()}")
-
-    print(f"\nsaved -> {OUT_DISCOVERY}  (+ ranked, + shortlist)")
-    print("\ntop 10 discoveries by consensus:")
-    print(discovery.head(10)[["peptide_id", "sequence", "length",
-                              "esm_prob", "xgb_prob", "consensus"]].to_string(index=False))
+    # model-agreement funnel. how the candidate pool narrows at each score gate
+    funnel = [("n_candidates", len(seqs)),
+              ("esm_above_0.5", int((esm_prob >= 0.5).sum())),
+              ("xgb_above_0.5", int((xgb_prob >= 0.5).sum())),
+              ("both_above_0.5", len(shortlist)),
+              ("discoveries", len(discovery)),
+              ("discovery_threshold", DISCOVERY_THRESHOLD)]
+    pd.DataFrame(funnel, columns=["quantity", "value"]).to_csv(OUT_SCORE_FUNNEL, index=False)
 
 
 if __name__ == "__main__":

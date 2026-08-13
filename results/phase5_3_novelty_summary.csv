@@ -1,0 +1,16 @@
+quantity,value
+n_train_positives,873.0
+n_candidates,3596.0
+n_discoveries,412.0
+median_nn_all,0.5455
+median_nn_discoveries,0.5455
+pct_below_0.70_discoveries,81.3
+pct_at_or_above_0.90_discoveries,3.4
+median_nn_short_discoveries,0.6154
+median_nn_long_discoveries,0.4633
+n_short_discoveries,216.0
+n_long_discoveries,196.0
+spearman_rho_all,0.1731
+spearman_p_all,1.41e-25
+spearman_rho_discoveries,-0.0109
+spearman_p_discoveries,0.825
