@@ -50,21 +50,22 @@ import subprocess
 import tempfile
 import urllib.request
 from collections import defaultdict
-
 import pandas as pd
 
 # --------------------------------------------------------------------------- #
 # CONFIG
 # --------------------------------------------------------------------------- #
 
-SPLIT_CSV   = "data/dataset_split.csv"      # train/test set: length range + what counts as "already seen"
-OUT_DIR     = "screening"                   # where the candidate list is written
-STANDARD_AA = set("ACDEFGHIKLMNPQRSTVWY")   # the 20 standard amino acids; fragments with anything else are dropped
+SPLIT_CSV = "data/dataset_split.csv" # train/test set
+OUT_DIR = "screening" # where the candidate list is written to
+STANDARD_AA = set("ACDEFGHIKLMNPQRSTVWY") # the 20 standard amino acids
 
 # Dietary proteins to digest, as {name: UniProt accession}. Major constituents of
-# milk, egg and soy. Serum albumin and lysozyme are included on abundance, not on
-# DPP-IV evidence. P25974 is the beta-conglycinin beta subunit and P04776 is
-# glycinin G1 only, both being multi-subunit families. Sequences include signal peptides.
+# milk, egg and soy. Lactoferrin, serum albumin and lysozyme enter on hydrolysate-level
+# evidence only (Nongonierma and FitzGerald 2019, Figure 1, DPP-IV IC50 < 1.0 mg/mL),
+# not as sources of any identified inhibitory sequence. P25974 is the beta-conglycinin
+# beta subunit and P04776 is glycinin G1 only, both being multi-subunit families.
+# Sequences are full precursors and include signal peptides.
 SOURCE_PROTEINS = {
     "bovine_beta_casein": "P02666",
     "bovine_alpha_s1_casein": "P02662",
@@ -80,17 +81,17 @@ SOURCE_PROTEINS = {
     "soybean_beta_conglycinin": "P25974",
 }
 
-MISSED_CLEAVAGES = 1      # real digestion is incomplete -> allow up to 1 uncut site (keeps some longer partial fragments)
-MIN_CDHIT_LEN    = 11     # peptides below this skip CD-HIT (as in Phase 1.3) -> exact-match novelty only
-IDENTITY_CUTOFF  = 0.40   # a fragment >=40% identical to a known sequence counts as "already seen" and is dropped
+MISSED_CLEAVAGES = 1 # real digestion is incomplete -> allow up to 1 uncut site (keeps some longer partial fragments)
+MIN_CDHIT_LEN = 11 # peptides below this skip CD-HIT (as in Phase 1.3) -> exact-match novelty only
+IDENTITY_CUTOFF = 0.40 # a fragment >=40% identical to a known sequence counts as "already seen" and is dropped
 
 # Where each enzyme cuts. Each rule cuts just after a "trigger" residue (p1),
 # unless the next residue is proline (P), which blocks the cut. Trypsin and
 # chymotrypsin follow textbook specificities; pepsin's is broad and approximated.
 ENZYME_RULES = {
-    "pepsin":       {"p1": set("FLWYAE"), "block_p_prime": True},   # stomach, acidic, low specificity
-    "trypsin":      {"p1": set("KR"),     "block_p_prime": True},   # gut, cuts after Lys/Arg
-    "chymotrypsin": {"p1": set("FYWL"),   "block_p_prime": True},   # gut, cuts after bulky/aromatic residues
+    "pepsin": {"p1": set("FLWYAE"), "block_p_prime": True}, # stomach, acidic, low specificity
+    "trypsin": {"p1": set("KR"), "block_p_prime": True}, # gut, cuts after Lys/Arg
+    "chymotrypsin": {"p1": set("FYWL"), "block_p_prime": True}, # gut, cuts after bulky/aromatic residues
 }
 
 
