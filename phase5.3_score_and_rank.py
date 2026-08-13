@@ -39,18 +39,19 @@ from difflib import SequenceMatcher
 # --------------------------------------------------------------------------- #
 # CONFIG
 # --------------------------------------------------------------------------- #
-ESM2_NPZ   = "screening/screening_esm2.npz"
+ESM2_NPZ = "screening/screening_esm2.npz"
 CANDIDATES = "screening/screening_candidates.csv"
 FUSION_NPZ = "fusion_vectors.npz" # for the saved train z-score stats
-XGB_MODEL  = "models/base_xgb.joblib" # base learner (matches the multi-seed results)
+XGB_MODEL = "models/base_xgb.joblib" # base learner (matches the multi-seed results)
 
-OUT_RANKED    = "screening/screening_ranked.csv"
+OUT_RANKED = "screening/screening_ranked.csv"
 SPLIT = "data/dataset_split.csv" # training positives, for the novelty check
 OUT_DISCOVERY = "screening/screening_discovery.csv"
 OUT_SHORTLIST = "screening/screening_shortlist.csv"
 
-# Calibrated discovery cutoff from Phase 5.0: consensus >= 0.90 -> ~90% verified
-# positive rate on held-out data. This is the primary screen, not top-N.
+# Discovery cutoff. Phase 5.0's sweep recommends 0.87; 0.90 is the conservative
+# choice, the top calibration bin: 450 out-of-fold peptides at 90.9% positive.
+# This is the primary screen, not top-N.
 DISCOVERY_THRESHOLD = 0.90
 
 # Agreement threshold: a candidate is "high-confidence" only if both models put it
