@@ -1,9 +1,4 @@
 
-#!/usr/bin/env python3
-
-# Install these:
-# pip install numpy pandas matplotlib
-# python phase5.0_calibration_curve.py
 
 """
 Phase 5.0: Calibration curve for the consensus score - justifies the discovery threshold.
@@ -24,26 +19,24 @@ sits below this figure - the control dockings (Phase 5.5) are the independent ch
 INPUT   predictions/esm2_dora_predictions.npz   esm_oof, y_train
         predictions/base_tree_predictions.npz    xgb_oof, y_train
 OUTPUT  screening/consensus_calibration.csv       per-bin reliability table
-        screening/consensus_calibration.png       reliability diagram (write-up figure)
-        + prints the recommended discovery threshold
+        results/phase5_0_calibration_summary.csv  ECE, row counts and operating points
 
-REQUIREMENTS  pip install numpy pandas matplotlib
+REQUIREMENTS  pip install numpy pandas
 """
 
 # Imports
 import numpy as np
 import pandas as pd
-import matplotlib
-matplotlib.use("Agg") # headless backend -> saves a file, no display needed
-import matplotlib.pyplot as plt
+
 
 # --------------------------------------------------------------------------- #
 # CONFIG
 # --------------------------------------------------------------------------- #
-ESM_NPZ    = "predictions/esm2_dora_predictions.npz"
-TREE_NPZ   = "predictions/base_tree_predictions.npz"
-OUT_CSV    = "screening/consensus_calibration.csv"
-OUT_PNG    = "screening/consensus_calibration.png"
+ESM_NPZ = "predictions/esm2_dora_predictions.npz"
+TREE_NPZ = "predictions/base_tree_predictions.npz"
+OUT_CSV = "screening/consensus_calibration.csv"
+OUT_PNG = "screening/consensus_calibration.png"
+SUM_CSV = "results/phase5_0_calibration_summary.csv"
 
 TARGET_PRECISION = 0.90 # supervisor's goal: discoveries with >=~90% verified positive rate
 MIN_BIN_N = 30 # don't trust a threshold whose surviving set is tiny
@@ -128,7 +121,7 @@ def main():
     print(ops.to_string(index=False, float_format=lambda x: f"{x:.3f}"))
 
     # Recommended threshold: the lowest cutoff whose surviving set is >=TARGET_PRECISION
-    # positive AND still well-populated (>=MIN_BIN_N). This keeps as many candidates as
+    # positive and still well-populated (>=MIN_BIN_N). This keeps as many candidates as
     # possible while honouring the "verified ~90% probability" goal.
     grid = operating_points(y, consensus, np.arange(0.50, 0.991, 0.01))
     ok = grid[(grid.empirical_pos_rate >= TARGET_PRECISION) & (grid.n_above >= MIN_BIN_N)]
@@ -136,16 +129,22 @@ def main():
     print(f"\nRecommended discovery threshold: consensus >= {thr:.2f}  "
           f"(>= {TARGET_PRECISION:.0%} verified positive rate on held-out data)")
 
-    # Save the table and the reliability figure for the write-up.
+    # persist the quoted numbers; previously print-only
+    esm_oof, xgb_oof = esm["esm_oof"].astype(float), tree["xgb_oof"].astype(float)
+    rows = [("n_oof", len(y)),
+            ("n_oof_positive", int(y.sum())),
+            ("ece_consensus_oof", round(ece(y, consensus), 4)),
+            ("ece_esm2_oof", round(ece(y, esm_oof), 4)),
+            ("ece_xgb_oof", round(ece(y, xgb_oof), 4)),
+            ("recommended_threshold", thr)]
+    for t in (thr, 0.90):
+        r = grid[grid.threshold == round(t, 2)].iloc[0] # operating point at this cutoff
+        rows += [(f"n_above_{t:.2f}", int(r.n_above)),
+                 (f"pos_rate_{t:.2f}", round(float(r.empirical_pos_rate), 4))]
+
     rel.to_csv(OUT_CSV, index=False)
-    plt.figure(figsize=(5, 5))
-    plt.plot([0, 1], [0, 1], "--", color="grey", label="perfect calibration")
-    plt.plot(rel.mean_pred, rel.obs_pos, "o-", label="consensus")
-    plt.axvline(thr, color="red", ls=":", label=f"threshold {thr:.2f}")
-    plt.xlabel("mean predicted probability"); plt.ylabel("observed positive fraction")
-    plt.title("Consensus reliability diagram (OOF train)"); plt.legend(); plt.tight_layout()
-    plt.savefig(OUT_PNG, dpi=150)
-    print(f"saved -> {OUT_CSV} and {OUT_PNG}")
+    pd.DataFrame(rows, columns=["quantity", "value"]).to_csv(SUM_CSV, index=False)
+    print(f"saved {OUT_CSV} and {SUM_CSV}")
 
 
 if __name__ == "__main__":

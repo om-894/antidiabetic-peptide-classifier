@@ -1,0 +1,11 @@
+quantity,value
+n_oof,1754.0
+n_oof_positive,873.0
+ece_consensus_oof,0.0393
+ece_esm2_oof,0.0407
+ece_xgb_oof,0.0617
+recommended_threshold,0.87
+n_above_0.87,575.0
+pos_rate_0.87,0.9026
+n_above_0.90,450.0
+pos_rate_0.90,0.9089
