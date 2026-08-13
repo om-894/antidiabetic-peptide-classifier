@@ -1,0 +1,5 @@
+tool,length_class,n_scored,n_flagged,pct_flagged,fisher_p
+toxinpred2,<=10,216,159,73.6,0.00235
+toxinpred2,>10,196,116,59.2,0.00235
+algpred2,<=10,57,53,93.0,0.000166
+algpred2,>10,80,53,66.2,0.000166

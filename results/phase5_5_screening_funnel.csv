@@ -1,0 +1,9 @@
+stage,n,detail
+source_proteins,12,UniProt entries contributing candidates
+novel_candidates,3596,unique digestion fragments after novelty filter
+overlap_with_split,0,exact matches against train plus test
+discoveries,412,consensus >= 0.90
+non_toxic,137,ToxinPred2 score < 0.6
+non_toxic_non_allergen,31,AlgPred 2.0 Non-Allergen
+tier1,216,discoveries of 10 aa or fewer
+tier2,27,longer discoveries passing both filters
