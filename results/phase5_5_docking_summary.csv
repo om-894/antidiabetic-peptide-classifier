@@ -1,0 +1,14 @@
+quantity,value
+n_docked,8
+n_decoys,3
+best_score_peptide,FVAPFPEVF
+best_score,-100.1
+best_score_sd,1.6
+best_score_z,-1.83
+decoy_score_range,-66.8 to -60.6
+decoy_elec_range,-311.9 to -235.5
+decoy_desolv_range,5.5 to 12.2
+decoy_elec_pct_range,66.3 to 73.6
+genuine_elec_pct_range,8.2 to 24.4
+n_desolv_unfavourable,4
+leads_desolv_unfavourable,TNDTPMIGTLAGANSLLNALPEEVIQHTFNLK
