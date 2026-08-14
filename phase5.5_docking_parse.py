@@ -179,6 +179,62 @@ def parse_job(tgz):
         **stats[best],
     }
 
+# --------------------------------------------------------------------------- #
+# TRACEABILITY OUTPUTS
+# --------------------------------------------------------------------------- #
+def weighted_terms(rows):
+    """Add each energy term's weighted contribution to the score, plus the share
+    of the favourable total carried by electrostatics."""
+    for r in rows:
+        r["vdw_contrib"]    = round(W_VDW    * r["vdw"], 2)
+        r["elec_contrib"]   = round(W_ELEC   * r["elec"], 2)
+        r["desolv_contrib"] = round(W_DESOLV * r["desolv"], 2)
+        r["air_contrib"]    = round(W_AIR    * r["air"], 2)
+        fav = sum(v for v in (r["vdw_contrib"], r["elec_contrib"],
+                              r["desolv_contrib"], r["air_contrib"]) if v < 0)
+        r["elec_pct_of_favourable"] = round(100 * r["elec_contrib"] / fav, 1)
+        r["desolv_favourable"] = r["desolv"] < 0
+
+
+def write_results(rows, out_dir="results"):
+    """One row per docked peptide, plus the group figures quoted in Section 3.4."""
+    os.makedirs(out_dir, exist_ok=True)
+    cols = ["role", "peptide", "job_id", "score", "sd", "n", "best_cl", "n_clusters", "z",
+            "vdw", "elec", "desolv", "air", "bsa",
+            "vdw_contrib", "elec_contrib", "desolv_contrib", "air_contrib",
+            "elec_pct_of_favourable", "desolv_favourable"]
+    with open(os.path.join(out_dir, "phase5_5_docking.csv"), "w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=cols, extrasaction="ignore")
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: (round(v, 4) if isinstance(v, float) else v)
+                        for k, v in r.items() if k in cols})
+
+    decoys = [r for r in rows if r["role"] == "-ve control"]
+    genuine = [r for r in rows if r["role"] in ("Tier-1 lead", "+ve control")]
+    rng = lambda g, k: f"{min(r[k] for r in g):.1f} to {max(r[k] for r in g):.1f}"
+    summary = [
+        ("n_docked", len(rows)),
+        ("n_decoys", len(decoys)),
+        ("best_score_peptide", rows[0]["peptide"]),
+        ("best_score", round(rows[0]["score"], 1)),
+        ("best_score_sd", round(rows[0]["sd"], 1)),
+        ("best_score_z", round(rows[0]["z"], 2)),
+        ("decoy_score_range", rng(decoys, "score")),
+        ("decoy_elec_range", rng(decoys, "elec")),
+        ("decoy_desolv_range", rng(decoys, "desolv")),
+        ("decoy_elec_pct_range", rng(decoys, "elec_pct_of_favourable")),
+        ("genuine_elec_pct_range", rng(genuine, "elec_pct_of_favourable")),
+        ("n_desolv_unfavourable", sum(1 for r in rows if not r["desolv_favourable"])),
+        ("leads_desolv_unfavourable",
+         ";".join(r["peptide"] for r in rows
+                  if not r["desolv_favourable"] and r["role"].endswith("lead"))),
+    ]
+    with open(os.path.join(out_dir, "phase5_5_docking_summary.csv"), "w", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["quantity", "value"])
+        w.writerows(summary)
+
 
 # --------------------------------------------------------------------------- #
 # MAIN
@@ -205,11 +261,15 @@ def main():
 
     # Sort from best binder to worst.
     rows.sort(key=lambda r: r["score"])
+    weighted_terms(rows)
+    write_results(rows)
 
     # Write the final results table.
     os.makedirs(os.path.dirname(OUT_CSV) or ".", exist_ok=True)
     cols = ["role", "job_id", "job", "peptide", "score", "sd", "n", "best_cl", "n_clusters",
-            "z", "vdw", "elec", "desolv", "air", "bsa"]
+        "z", "vdw", "elec", "desolv", "air", "bsa",
+        "vdw_contrib", "elec_contrib", "desolv_contrib", "air_contrib",
+        "elec_pct_of_favourable", "desolv_favourable"]
     with open(OUT_CSV, "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=cols, extrasaction="ignore")
         w.writeheader()
