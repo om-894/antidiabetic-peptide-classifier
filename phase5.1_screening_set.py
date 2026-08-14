@@ -1,8 +1,4 @@
 
-# Install these:
-# pip install pandas
-# cd-hit via Homebrew (brew install cd-hit) for the near-duplicate filter.
-
 """
 Phase 5.1: Build the screening pool - the set of novel peptides the trained
 pipeline is applied to for discovery (Aim 5).

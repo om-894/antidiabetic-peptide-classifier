@@ -30,14 +30,12 @@ from statistics import mean, pstdev # population sd -> matches haddock's own rep
 ARCHIVE_DIR = os.path.expanduser(os.environ.get("HADDOCK_DIR", "docking/haddock_runs"))
 OUT_CSV = os.environ.get("OUT_CSV", "docking/haddock_scores.csv")
 
-# haddock never saves the final score, so rebuild it per model - a weighted sum of four
-# energies, using its water-refinement weights (elec drops to 0.2 once models are water-refined):
-#   vdw    -> van der waals - shape fit, how well the peptide packs the pocket
-#   elec   -> electrostatics - charge attraction/repulsion
-#   desolv -> empirical desolvation - favours burying hydrophobic (water-hating) surface
-#   air    -> restraint violation - how far the pose drifts off the active site we pinned it
-#             to (a docking penalty, not a real binding energy)
-# more negative overall = better predicted binder
+# HADDOCK does not store the final score, so rebuild it per model. Water-stage weights, since
+# every archived model is water-refined (FILENAME ends "w.pdb") and that stage downweights
+# electrostatics for solvent screening. BSA is absent here, though it0 and it1 carry -0.01 BSA.
+#   vdw shape packing, elec charge attraction and repulsion, desolv rewards burying
+#   water-repelling surface, air restraint-violation penalty rather than a binding energy.
+# More negative = better predicted binder. https://www.bonvinlab.org/software/haddock2.4/scoring/
 W_VDW, W_ELEC, W_DESOLV, W_AIR = 1.0, 0.2, 1.0, 0.1
 
 # job name to what role the peptide plays here. the sequence itself is read from the pdb,
@@ -196,6 +194,7 @@ def weighted_terms(rows):
         r["desolv_favourable"] = r["desolv"] < 0
 
 
+# function tooutput the results in a table to be used in results section 3.4
 def write_results(rows, out_dir="results"):
     """One row per docked peptide, plus the group figures quoted in Section 3.4."""
     os.makedirs(out_dir, exist_ok=True)
