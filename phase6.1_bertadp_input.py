@@ -32,6 +32,18 @@ def main():
     soft = df[(df.Label == 0) & (df.NegType == "soft") & (df.Split == "test")][["Sequence", "Label"]]
     soft.to_csv(f"{OUT_DIR}/bertadp_softneg_test.csv", index=False)
 
+    # validity control: none of the benchmarked peptides may appear in BertADP's training data
+    XIE = os.path.expanduser("~/BertADP/data/allData.csv")
+    if os.path.exists(XIE):
+        xie = set(pd.read_csv(XIE, keep_default_na=False).Sequence.astype(str))
+        rows = [{"set": name, "n": len(set(sub.Sequence.astype(str))),
+                 "n_in_bertadp_training": len(set(sub.Sequence.astype(str)) & xie)}
+                for name, sub in [("hard_test", test), ("hard_all", hard), ("soft_test", soft)]]
+        pd.DataFrame(rows).to_csv(f"{OUT_DIR}/bertadp_overlap_check.csv", index=False)
+        print(pd.DataFrame(rows).to_string(index=False))
+    else:
+        print(f"[warn] {XIE} not found, overlap control skipped")
+
     # report the counts and where they were written
     print(f"test soft negatives: {len(soft)} -> {OUT_DIR}/bertadp_softneg_test.csv")
     print(f"test hard negatives: {len(test)} -> {OUT_DIR}/bertadp_hardneg_test.csv")
