@@ -8,11 +8,10 @@ Log-odds, not probability, because a strong lead saturates near P=1 - log-odds i
 unbounded and exposes which residues actually drive the call (large delta = matters).
 In-silico version of wet-lab alanine mutagenesis.
 
-INPUT   models/esm2_dora_adapter/        fine-tuned adapter (Phase 3.3)
-OUTPUT  screening/alanine_<name>.csv     position, wt, P_mut, delta_logodds
-        screening/alanine_<name>.png     delta per position (the scan figure)
+INPUT   models/esm2_dora_adapter/          fine-tuned adapter (Phase 3.3)
+OUTPUT  results/phase5_6_alanine_scan.csv  peptide, position, wt, P_mut, delta_logodds
 
-REQUIREMENTS  pip install torch transformers peft pandas numpy matplotlib
+REQUIREMENTS  pip install torch transformers peft pandas numpy
 """
 
 import os
@@ -23,9 +22,6 @@ os.environ["TRANSFORMERS_OFFLINE"] = "1" # (set before transformers is imported)
 import numpy as np
 import pandas as pd
 import torch
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from peft import PeftModel
 
@@ -72,32 +68,27 @@ def scan(seq, tok, model):
     # a big drop means the model leans heavily on that residue for the ADP call.
     rows = [{"position": i + 1, "wt": seq[i],
              "P_mut": round(float(p[1 + i]), 4),
+             "wt_P_adp": round(float(p_wt), 4),
+             "wt_logodds": round(float(lo_wt), 3),
              "delta_logodds": round(float(lo_wt - lo[1 + i]), 3),
-             "already_ala": seq[i] == "A"} for i in range(len(seq))] # A->A is a no-op, flag it
+             "already_ala": seq[i] == "A",} for i in range(len(seq))] # A->A is a no-op, flag it
     return lo_wt, p_wt, pd.DataFrame(rows)
 
 
 def main():
     print(f"device: {DEVICE}")
-    tok = AutoTokenizer.from_pretrained(MODEL_ID) # tokenizer for the base ESM-2 model
+    tok = AutoTokenizer.from_pretrained(MODEL_ID)  # tokenizer for the base ESM-2 model
     model = load_model()
+    os.makedirs("results", exist_ok=True)
 
-    # scan each case-study peptide and save a table + a figure for it
+    # scan each case-study peptide and save its table
     for name, seq in PEPTIDES.items():
         lo_wt, p_wt, df = scan(seq, tok, model)
-        df.to_csv(f"screening/alanine_{name}.csv", index=False)
+        df.insert(0, "peptide", name)
+        df.to_csv("results/phase5_6_alanine_scan.csv", index=False)
         print(f"\n{name}: wild-type P(ADP)={p_wt:.3f}, log-odds={lo_wt:.2f}")
-        print(df.sort_values("delta_logodds", ascending=False).to_string(index=False))   # most important first
-
-        # bar chart of the per-position drop; alanine positions greyed out (no-op mutations)
-        plt.figure(figsize=(max(4, len(seq) * 0.5), 3))
-        plt.bar([f"{r.wt}{r.position}" for r in df.itertuples()], df.delta_logodds,
-                color=["lightgrey" if a else "steelblue" for a in df.already_ala])
-        plt.axhline(0, color="k", lw=0.6)
-        plt.ylabel("Δ ADP log-odds (WT − Ala)")
-        plt.title(f"Alanine scan: {name}")
-        plt.tight_layout(); plt.savefig(f"screening/alanine_{name}.png", dpi=150); plt.close()
-        print(f"saved -> screening/alanine_{name}.csv + .png")
+        print(df.sort_values("delta_logodds", ascending=False).to_string(index=False))
+        print("saved -> results/phase5_6_alanine_scan.csv")
 
 
 if __name__ == "__main__":

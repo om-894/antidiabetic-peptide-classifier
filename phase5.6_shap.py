@@ -1,7 +1,4 @@
 
-# Install:
-# pip install shap xgboost scikit-learn joblib pandas numpy matplotlib
-
 """
 Phase 5.6: SHAP interpretability - which physicochemical features drive the tree
 learners' ADP predictions.
@@ -14,10 +11,9 @@ descriptors vs the PLM embeddings overall. Explained on the held-out test set.
 
 INPUT   fusion_vectors.npz     X, descriptor_names, split
         models/base_xgb.joblib, models/base_rf.joblib
-OUTPUT  screening/shap_descriptor_importance.csv
-        screening/shap_xgb_descriptors.png, screening/shap_rf_descriptors.png
+OUTPUT  results/phase5_6_shap_descriptors.csv
 
-REQUIREMENTS  pip install shap xgboost scikit-learn joblib pandas numpy matplotlib
+REQUIREMENTS  pip install shap xgboost scikit-learn joblib pandas numpy
 """
 
 # Imports 
@@ -27,20 +23,19 @@ warnings.filterwarnings("ignore") # silence warnings
 import joblib
 import numpy as np
 import pandas as pd
-import matplotlib
-matplotlib.use("Agg") # use 'agg' backend for matplotlib
-import matplotlib.pyplot as plt
 import shap
+import os
 
 # --------------------------------------------------------------------------- #
 # CONFIG
 # --------------------------------------------------------------------------- #
 FUSION  = "fusion_vectors.npz"
 MODELS  = {"xgb": "models/base_xgb.joblib", "rf": "models/base_rf.joblib"}
-OUT_CSV = "screening/shap_descriptor_importance.csv"
+OUT_CSV = "results/phase5_6_shap_descriptors.csv"
 
 
 def main():
+    os.makedirs("results", exist_ok=True)
     d = np.load(FUSION, allow_pickle=True)
     X = d["X"].astype(np.float32)
     desc_names = [str(s) for s in d["descriptor_names"]] # the 7 descriptors
@@ -56,23 +51,23 @@ def main():
         if sv.ndim == 3: # RF returns (n, features, classes)
             sv = sv[:, :, 1] # take class 1 = P(ADP)
 
-        mean_abs = np.abs(sv).mean(0) # [1287] global importance per feature
-        for j, name in zip(desc_idx, desc_names):
-            rows.append({"model": tag, "feature": name, "mean_abs_shap": float(mean_abs[j])})
+        mean_abs = np.abs(sv).mean(0)  # [1287] global importance per feature
 
         # how much do the trees lean on the 7 descriptors vs the 1280 embeddings?
         desc_share = mean_abs[n_emb:].sum() / mean_abs.sum()
+
+        for j, name in zip(desc_idx, desc_names):
+            # sign of the relationship, as the beeswarm's colour axis showed it.
+            # positive means a higher descriptor value pushes the prediction towards ADP
+            direction = (float(np.corrcoef(Xte[:, j], sv[:, j])[0, 1])
+                         if sv[:, j].std() > 0 else float("nan"))
+            rows.append({"model": tag, "feature": name,
+                         "mean_abs_shap": float(mean_abs[j]),
+                         "value_shap_corr": round(direction, 3),
+                         "descriptor_share_of_total": round(float(desc_share), 4)})
         print(f"[{tag}] descriptor share of total |SHAP|: {desc_share:.1%}")
 
-        # plot the SHAP summary plot for the 7 descriptors, save to png
-        shap.summary_plot(sv[:, desc_idx], Xte[:, desc_idx],
-                          feature_names=desc_names, show=False)
-        plt.title(f"SHAP - physicochemical descriptors ({tag})")
-        plt.tight_layout()
-        plt.savefig(f"screening/shap_{tag}_descriptors.png", dpi=150)
-        plt.close()
-
-    # save the descriptor importance to csv for later inspection
+    # save the descriptor importance to csv
     imp = pd.DataFrame(rows)
     imp.to_csv(OUT_CSV, index=False)
 
@@ -80,7 +75,7 @@ def main():
     print("\ndescriptor importance (mean |SHAP|), ranked by xgb:")
     print(imp.pivot(index="feature", columns="model", values="mean_abs_shap")
              .sort_values("xgb", ascending=False).round(4).to_string())
-    print(f"\nsaved -> {OUT_CSV} + screening/shap_*_descriptors.png")
+    print(f"\nsaved -> {OUT_CSV}")
 
 
 if __name__ == "__main__":
