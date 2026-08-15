@@ -50,6 +50,10 @@ def main():
         sv = np.asarray(shap.TreeExplainer(model).shap_values(Xte))
         if sv.ndim == 3: # RF returns (n, features, classes)
             sv = sv[:, :, 1] # take class 1 = P(ADP)
+        if tag == "xgb":  # the learner in the consensus, and the one Figure 8b draws
+            np.savez_compressed("results/phase5_6_shap_matrix.npz",
+                                shap_desc=sv[:, desc_idx], value_desc=Xte[:, desc_idx],
+                                names=np.array(desc_names, dtype=object))
 
         mean_abs = np.abs(sv).mean(0)  # [1287] global importance per feature
 
