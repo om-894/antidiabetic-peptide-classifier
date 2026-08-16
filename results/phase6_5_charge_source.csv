@@ -11,3 +11,8 @@ train_charge_auc_positives_vs_hard_only,0.5766,1156
 test_hardneg_mean_charge_false_positive,-0.782,21
 test_hardneg_mean_charge_correct_reject,0.697,24
 test_hardneg_charge_auc_predicting_false_positive,0.2847,45
+screen_mean_charge_all_candidates,-0.114,3596
+screen_pct_cationic_all_candidates,33.3,3596
+screen_mean_charge_discoveries,-0.79,412
+screen_pct_cationic_discoveries,10.2,412
+screen_spearman_consensus_vs_charge,-0.3344,3596

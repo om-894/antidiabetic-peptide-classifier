@@ -11,6 +11,7 @@ rejects are cationic.
 
 INPUT   data/dataset_split.csv
         predictions/esm2_dora_predictions.npz
+        screening/screening_ranked.csv
 OUTPUT  results/phase6_5_charge_source.csv
 
 REQUIREMENTS  pip install pandas numpy peptides scikit-learn
@@ -21,10 +22,12 @@ import numpy as np
 import pandas as pd
 import peptides
 from sklearn.metrics import roc_auc_score
+from scipy.stats import spearmanr
 
 SPLIT = "data/dataset_split.csv"
 ESM   = "predictions/esm2_dora_predictions.npz"
 OUT   = "results/phase6_5_charge_source.csv"
+SCREEN = "screening/screening_ranked.csv"
 
 CATIONIC = 0.5   # net charge above this counts as cationic
 
@@ -72,6 +75,24 @@ def main():
          "value": round(hard.charge[~fp].mean(), 3), "n": int((~fp).sum())},
         {"quantity": "test_hardneg_charge_auc_predicting_false_positive",
          "value": round(roc_auc_score(fp.astype(int), hard.charge), 4), "n": len(hard)},
+    ]
+
+    # the same rule in the screen output. discoveries and non-discoveries come
+    # from one pool, so a charge gap between them is the classifier's doing
+    r = pd.read_csv(SCREEN, keep_default_na=False)
+    r["charge"] = [peptides.Peptide(str(s)).charge(pH=7.4) for s in r.sequence]
+    disc = r[r.discovery]
+    rows += [
+        {"quantity": "screen_mean_charge_all_candidates",
+         "value": round(r.charge.mean(), 3), "n": len(r)},
+        {"quantity": "screen_pct_cationic_all_candidates",
+         "value": round(100 * (r.charge > CATIONIC).mean(), 1), "n": len(r)},
+        {"quantity": "screen_mean_charge_discoveries",
+         "value": round(disc.charge.mean(), 3), "n": len(disc)},
+        {"quantity": "screen_pct_cationic_discoveries",
+         "value": round(100 * (disc.charge > CATIONIC).mean(), 1), "n": len(disc)},
+        {"quantity": "screen_spearman_consensus_vs_charge",
+         "value": round(spearmanr(r.consensus, r.charge)[0], 4), "n": len(r)},
     ]
 
     out = pd.DataFrame(rows)
