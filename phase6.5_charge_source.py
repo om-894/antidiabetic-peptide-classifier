@@ -1,0 +1,84 @@
+"""
+Phase 6.5: where the charge shortcut comes from.
+
+Section 3.4 states that the classifiers under-score cationic peptides. This
+measures that claim in two places. First in the training data, where the
+antimicrobial negatives are strongly cationic and the proteome fragments are
+not, so charge separates the positives from one half of the negative class and
+barely from the other. Second in the fine-tuned model's own behaviour, where the
+held-out hard negatives it wrongly accepts are anionic and the ones it correctly
+rejects are cationic.
+
+INPUT   data/dataset_split.csv
+        predictions/esm2_dora_predictions.npz
+OUTPUT  results/phase6_5_charge_source.csv
+
+REQUIREMENTS  pip install pandas numpy peptides scikit-learn
+"""
+
+import os
+import numpy as np
+import pandas as pd
+import peptides
+from sklearn.metrics import roc_auc_score
+
+SPLIT = "data/dataset_split.csv"
+ESM   = "predictions/esm2_dora_predictions.npz"
+OUT   = "results/phase6_5_charge_source.csv"
+
+CATIONIC = 0.5   # net charge above this counts as cationic
+
+
+def main():
+    os.makedirs("results", exist_ok=True)
+    d = pd.read_csv(SPLIT, keep_default_na=False)
+    d["charge"] = [peptides.Peptide(str(s)).charge(pH=7.4) for s in d.Sequence]
+    tr = d[d.Split == "train"]
+    rows = []
+
+    # composition of each training class. the antimicrobial negatives carry the
+    # charge, the proteome fragments sit near the positives
+    for name, g in [("positives", tr[tr.Label == 1]),
+                    ("soft_antimicrobial", tr[(tr.Label == 0) & (tr.NegType == "soft")]),
+                    ("hard_swissprot", tr[(tr.Label == 0) & (tr.NegType == "hard")])]:
+        rows.append({"quantity": f"train_mean_charge_{name}",
+                     "value": round(g.charge.mean(), 3), "n": len(g)})
+        rows.append({"quantity": f"train_pct_cationic_{name}",
+                     "value": round(100 * (g.charge > CATIONIC).mean(), 1), "n": len(g)})
+
+    # can charge alone tell the training classes apart. label 1 = is a negative,
+    # so an AUC above 0.5 means a higher charge marks a negative
+    for name, sub in [("all_negatives", tr),
+                      ("soft_only", tr[(tr.Label == 1) | (tr.NegType == "soft")]),
+                      ("hard_only", tr[(tr.Label == 1) | (tr.NegType == "hard")])]:
+        rows.append({"quantity": f"train_charge_auc_positives_vs_{name}",
+                     "value": round(roc_auc_score((sub.Label == 0).astype(int), sub.charge), 4),
+                     "n": len(sub)})
+
+    # the model's own calls on the held-out hard negatives. every one is a true
+    # non-ADP, so any probability above 0.5 is a false positive
+    z = np.load(ESM, allow_pickle=True)
+    p = z["esm_test"].astype(float)
+    test = d[d.Split == "test"].reset_index(drop=True)
+    assert [str(s) for s in z["sequences"]][-len(p):] == test.Sequence.tolist(), "test rows misaligned"
+    test["p"] = p
+
+    hard = test[(test.Label == 0) & (test.NegType == "hard")]
+    fp = hard.p > 0.5
+    rows += [
+        {"quantity": "test_hardneg_mean_charge_false_positive",
+         "value": round(hard.charge[fp].mean(), 3), "n": int(fp.sum())},
+        {"quantity": "test_hardneg_mean_charge_correct_reject",
+         "value": round(hard.charge[~fp].mean(), 3), "n": int((~fp).sum())},
+        {"quantity": "test_hardneg_charge_auc_predicting_false_positive",
+         "value": round(roc_auc_score(fp.astype(int), hard.charge), 4), "n": len(hard)},
+    ]
+
+    out = pd.DataFrame(rows)
+    out.to_csv(OUT, index=False)
+    print(out.to_string(index=False))
+    print(f"saved {OUT}")
+
+
+if __name__ == "__main__":
+    main()

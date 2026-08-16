@@ -1,0 +1,13 @@
+quantity,value,n
+train_mean_charge_positives,-0.297,873
+train_pct_cationic_positives,25.9,873
+train_mean_charge_soft_antimicrobial,3.447,598
+train_pct_cationic_soft_antimicrobial,90.0,598
+train_mean_charge_hard_swissprot,0.005,283
+train_pct_cationic_hard_swissprot,37.8,283
+train_charge_auc_positives_vs_all_negatives,0.8041,1754
+train_charge_auc_positives_vs_soft_only,0.9118,1471
+train_charge_auc_positives_vs_hard_only,0.5766,1156
+test_hardneg_mean_charge_false_positive,-0.782,21
+test_hardneg_mean_charge_correct_reject,0.697,24
+test_hardneg_charge_auc_predicting_false_positive,0.2847,45
