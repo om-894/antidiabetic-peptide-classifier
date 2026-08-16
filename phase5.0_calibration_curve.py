@@ -27,7 +27,7 @@ REQUIREMENTS  pip install numpy pandas
 # Imports
 import numpy as np
 import pandas as pd
-
+from sklearn.metrics import roc_auc_score
 
 # --------------------------------------------------------------------------- #
 # CONFIG
@@ -141,6 +141,15 @@ def main():
         r = grid[grid.threshold == round(t, 2)].iloc[0] # operating point at this cutoff
         rows += [(f"n_above_{t:.2f}", int(r.n_above)),
                  (f"pos_rate_{t:.2f}", round(float(r.empirical_pos_rate), 4))]
+
+    # the consensus on the held-out test set, quoted in Section 3.3 beside the OOF
+    # figures. computed here so all four calibration numbers live in one file
+    yte = esm["y_test"].astype(int)
+    cons_te = 0.5 * (esm["esm_test"].astype(float) + tree["xgb_test"].astype(float))
+    rows += [("test_auc_consensus", round(roc_auc_score(yte, cons_te), 4)),
+             ("test_ece_consensus", round(ece(yte, cons_te), 4)),
+             ("test_auc_esm2", round(roc_auc_score(yte, esm["esm_test"].astype(float)), 4)),
+             ("test_ece_esm2", round(ece(yte, esm["esm_test"].astype(float)), 4))]
 
     rel.to_csv(OUT_CSV, index=False)
     pd.DataFrame(rows, columns=["quantity", "value"]).to_csv(SUM_CSV, index=False)

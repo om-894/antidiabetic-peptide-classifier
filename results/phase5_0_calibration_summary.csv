@@ -9,3 +9,7 @@ n_above_0.87,575.0
 pos_rate_0.87,0.9026
 n_above_0.90,450.0
 pos_rate_0.90,0.9089
+test_auc_consensus,0.8786
+test_ece_consensus,0.086
+test_auc_esm2,0.8769
+test_ece_esm2,0.1247
