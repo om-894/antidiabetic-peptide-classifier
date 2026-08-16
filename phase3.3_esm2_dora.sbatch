@@ -27,4 +27,4 @@ export HF_HUB_OFFLINE=1
 nvidia-smi
 # Smoke test (1 fold x 1 epoch on 64 rows) before the real run:
 #   SMOKE_TEST=1 sbatch phase3_esm2_dora.sbatch
-python phase3_esm2_dora.py
+python phase3.3_esm2_dora.py
