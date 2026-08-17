@@ -23,6 +23,7 @@ import os
 import numpy as np
 import pandas as pd
 import peptides
+from scipy.stats import spearmanr
 
 DOCKING = "results/phase5_5_docking.csv"
 SPLIT = "data/dataset_split.csv"
