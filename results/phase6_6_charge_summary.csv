@@ -1,0 +1,14 @@
+quantity,value
+lead_net_charge,-1.004
+lead_n_lys_arg,0.0
+genuine_n_lys_arg_total,0.0
+control_n_lys_arg_min,2.0
+control_n_lys_arg_max,4.0
+n_test_hard_negatives,45.0
+mean_charge_docked_controls,2.008
+mean_charge_remaining_hard_negatives,-0.136
+mean_charge_all_test_hard_negatives,0.007
+max_consensus_docked_controls,0.0066
+active_site_n_residues,22.0
+active_site_n_acidic,4.0
+active_site_n_basic,2.0
