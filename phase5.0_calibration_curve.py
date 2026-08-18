@@ -151,6 +151,16 @@ def main():
              ("test_auc_esm2", round(roc_auc_score(yte, esm["esm_test"].astype(float)), 4)),
              ("test_ece_esm2", round(ece(yte, esm["esm_test"].astype(float)), 4))]
 
+    # the same 0.90 cutoff applied to the test set, so the out-of-fold rate has a
+    # held-out comparison. these are the peptides a threshold set on the training
+    # folds would have admitted on data it never saw
+    mte = cons_te >= 0.90
+    rows += [("n_test_above_0.90", int(mte.sum())),
+             ("n_test_above_0.90_positive", int(yte[mte].sum())),
+             ("pos_rate_test_0.90", round(float(yte[mte].mean()), 4))]
+
+    rel.to_csv(OUT_CSV, index=False)
+
     rel.to_csv(OUT_CSV, index=False)
     pd.DataFrame(rows, columns=["quantity", "value"]).to_csv(SUM_CSV, index=False)
     print(f"saved {OUT_CSV} and {SUM_CSV}")

@@ -13,3 +13,6 @@ test_auc_consensus,0.8786
 test_ece_consensus,0.086
 test_auc_esm2,0.8769
 test_ece_esm2,0.1247
+n_test_above_0.90,49.0
+n_test_above_0.90_positive,42.0
+pos_rate_test_0.90,0.8571
