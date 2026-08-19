@@ -12,6 +12,7 @@ rejects are cationic.
 INPUT   data/dataset_split.csv
         predictions/esm2_dora_predictions.npz
         screening/screening_ranked.csv
+        data/peptides.csv
 OUTPUT  results/phase6_5_charge_source.csv
 
 REQUIREMENTS  pip install pandas numpy peptides scikit-learn
@@ -25,9 +26,11 @@ from sklearn.metrics import roc_auc_score
 from scipy.stats import spearmanr
 
 SPLIT = "data/dataset_split.csv"
-ESM   = "predictions/esm2_dora_predictions.npz"
-OUT   = "results/phase6_5_charge_source.csv"
+ESM = "predictions/esm2_dora_predictions.npz"
+OUT = "results/phase6_5_charge_source.csv"
 SCREEN = "screening/screening_ranked.csv"
+SOFT_CSV = "data/peptides.csv" # raw DBAASP export, before any filtering
+STANDARD_AA = set("ACDEFGHIKLMNPQRSTVWY")
 
 CATIONIC = 0.5   # net charge above this counts as cationic
 
@@ -48,6 +51,21 @@ def main():
                      "value": round(g.charge.mean(), 3), "n": len(g)})
         rows.append({"quantity": f"train_pct_cationic_{name}",
                      "value": round(100 * (g.charge > CATIONIC).mean(), 1), "n": len(g)})
+
+    # the source pool before any filtering. if the export is as cationic as the
+    # 598 drawn from it, the skew is a property of the antimicrobial class rather
+    # than of the draw, so no larger or more careful sample would have helped
+    src = pd.read_csv(SOFT_CSV, keep_default_na=False)
+    seqs = src["SEQUENCE"].astype(str).str.strip()
+    seqs = seqs[seqs != ""].drop_duplicates()
+    std = seqs[[set(s).issubset(STANDARD_AA) for s in seqs]]
+    for name, ss in [("dbaasp_export", seqs),
+                     ("dbaasp_export_standard_aa", std)]:
+        ch = np.array([peptides.Peptide(s).charge(pH=7.4) for s in ss])
+        rows.append({"quantity": f"source_mean_charge_{name}",
+                     "value": round(float(ch.mean()), 3), "n": len(ch)})
+        rows.append({"quantity": f"source_pct_cationic_{name}",
+                     "value": round(100 * float((ch > CATIONIC).mean()), 1), "n": len(ch)})
 
     # can charge alone tell the training classes apart. label 1 = is a negative,
     # so an AUC above 0.5 means a higher charge marks a negative
