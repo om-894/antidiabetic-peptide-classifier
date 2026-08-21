@@ -22,7 +22,6 @@ INPUTS  dataset_split.csv (1932 sequences with Label and Split)
 OUTPUTS  esm2_embeddings.npz (X [N, 1280], sequences, label, split), saved in
               dataset_split.csv row order so alignment can be checked downstream
 REQUIREMENTS  pip install torch transformers pandas numpy
-              (first run downloads the model, ~2.5 GB)
 """
 
 # Imports
