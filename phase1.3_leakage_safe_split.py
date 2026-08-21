@@ -1,23 +1,26 @@
-
 """
 Phase 1.3: Leakage-safe train/test split (group-aware, keeps all data).
 
-CD-HIT clusters the full positive+negative set at 40% identity; whole clusters
-go to train or test, so no test sequence is >40% identical to any train one.
-Nothing is deleted for redundancy — near-duplicate pairs fall in the same split,
-and within train they're useful hard cases. (For scale: conventional 40%
-redundancy reduction would delete 782/1932 sequences, ~40% of the data, since
-many ADPs are overlapping insulin-derived fragments — so keeping all data matters.)
+CD-HIT clusters positives and negatives together at 40% identity. Whole clusters
+go to train or test so near-duplicates can't straddle the split. Clustering is
+greedy and misses some pairs. cd-hit-2d re-checks test against train afterwards
+then moves anything leaked back to train until it reports none. That only moves
+test -> train and never refills, so the realised test fraction lands under
+TEST_FRACTION (15% target -> 9.2%, n = 178).
 
-Only deletion: exact contradictions (a sequence appearing as both positive and
-negative) — an integrity guard that removes nothing here.
+Nothing is deleted for redundancy. Near-duplicates fall in the same split and
+inside train they're useful hard cases. Conventional 40% redundancy reduction
+would delete 782/1932 sequences (~40% of the data) since many ADPs are
+overlapping insulin-derived fragments. The only deletion is a sequence appearing
+as both positive and negative, an integrity guard that removes nothing here.
 
-Short sequences (< MIN_CDHIT_LEN) bypass CD-HIT (40% identity isn't meaningful
-there) and are split by stratified random assignment.
+Short sequences (< MIN_CDHIT_LEN) bypass CD-HIT since 40% identity isn't
+meaningful there. They get a stratified random split instead.
 
-REQUIREMENTS  cd-hit on PATH; pip install pandas
+INPUTS  positives_ADP.csv (966 positives), negatives.csv (966 negatives)
+OUTPUTS  dataset_split.csv (Sequence, Label, Length, Class, NegType, Split)
+REQUIREMENTS  cd-hit v4.8.1 on PATH; pip install pandas
 """
-# used CD-HIT 4.8.1 to put in methods.
 
 # Imports
 import os
@@ -33,13 +36,13 @@ import pandas as pd
 # --------------------------------------------------------------------------- #
 POSITIVES_CSV = "data/positives_ADP.csv"
 NEGATIVES_CSV = "data/negatives.csv"
-OUTPUT_CSV    = "data/dataset_split.csv"
+OUTPUT_CSV = "data/dataset_split.csv"
 
-IDENTITY      = 0.40       # identity threshold: >40% similar = "too close" (leakage)
-WORD_SIZE     = 2          # CD-HIT -n; must be 2 when -c is in [0.4, 0.5)
-MIN_CDHIT_LEN = 11         # sequences shorter than this, bypass CD-HIT
-TEST_FRACTION = 0.15       # aim for 15% of sequences in the test set
-SEED          = 42         # reproducible shuffling/splitting
+IDENTITY = 0.40 # identity threshold: >40% similar = "too close" (leakage)
+WORD_SIZE = 2 # CD-HIT -n; must be 2 when -c is in [0.4, 0.5)
+MIN_CDHIT_LEN = 11 # sequences shorter than this, bypass CD-HIT
+TEST_FRACTION = 0.15 # aim for 15% of sequences in the test set
+SEED = 42 # reproducible shuffling/splitting
 
 CD_HIT, CD_HIT_2D = "cd-hit", "cd-hit-2d"
 
@@ -53,7 +56,7 @@ def check_tools():
 
 def write_fasta(df, path):
     # Write sequences to FASTA, using each row's DataFrame index as the >header
-    # ID — so CD-HIT's output can be mapped straight back to the original rows.
+    # ID - so CD-HIT's output can be mapped straight back to the original rows.
     with open(path, "w") as fh:
         for idx, seq in zip(df.index, df["Sequence"]):
             fh.write(f">{idx}\n{seq}\n")
@@ -101,7 +104,7 @@ def cd_hit_clusters(df, tmp):
 
 def cd_hit_2d_kept(df_ref, df_query, tmp):
     """Index set of df_query NOT >IDENTITY to any sequence in df_ref."""
-    # cd-hit-2d compares two sets and keeps the query sequences that are NOT
+    # cd-hit-2d compares two sets and keeps the query sequences that are not
     # similar to anything in the reference. Used to check test-vs-train leakage
     # (ref = train, query = test): the returned ids are the "safe" test rows.
     if len(df_ref) == 0 or len(df_query) == 0:
@@ -112,13 +115,13 @@ def cd_hit_2d_kept(df_ref, df_query, tmp):
     write_fasta(df_ref, fref); write_fasta(df_query, fqry) # Run CD-HIT-2D to compare the two sets and keep only the query sequences 
                                                            # that are not similar to any reference sequence
     
-    # same flags as cd_hit_clusters, but cd-hit-2d with two inputs:
-    # -i (reference set) and -i2 (query set)
+    # same flags as cd_hit_clusters but cd-hit-2d takes two inputs, -i (reference)
+    # and -i2 (query)
     subprocess.run([CD_HIT_2D, "-i", fref, "-i2", fqry, "-o", fout,
                     "-c", str(IDENTITY), "-n", str(WORD_SIZE), "-l", "1",
                     "-d", "0", "-M", "0", "-T", "0"],
                    check=True, capture_output=True, text=True)
-    return fasta_ids(fout)
+    return fasta_ids(fout) # -o holds only the query seqs that survived, so these are the safe rows
 
 
 # --------------------------------------------------------------------------- #
@@ -126,28 +129,24 @@ def cd_hit_2d_kept(df_ref, df_query, tmp):
 # --------------------------------------------------------------------------- #
 def main():
     check_tools() # stop early if CD-HIT isn't installed
-    rng = random.Random(SEED) # for a reproducable split
+    rng = random.Random(SEED) # for a reproducible split
 
     # Load both classes, tagging each with Class (and NegType for negatives).
     pos = pd.read_csv(POSITIVES_CSV); pos["Class"] = "positive"; pos["NegType"] = pd.NA
     neg = pd.read_csv(NEGATIVES_CSV); neg["Class"] = "negative"
     if "NegType" not in neg.columns:
         neg["NegType"] = pd.NA
-    print(f"start: {len(pos)} positives, {len(neg)} negatives\n")
 
-    # Integrity guard: a sequence can't be both a positive and a negative, so
-    # drop any negative that exactly matches a positive (none expected here).
+    # Integrity guard, since a sequence can't be both a positive and a negative.
+    # Drops any negative that exactly matches a positive (none expected here).
     posset = set(pos["Sequence"])
-    before = len(neg)
     neg = neg[~neg["Sequence"].isin(posset)].reset_index(drop=True)
-    print(f"integrity: removed {before - len(neg)} negatives identical to a "
-          f"positive (exact contradictions)\n")
 
-    # Combine into one frame; the row index now serves as each sequence's ID.
+    # Combine into one frame. ignore_index makes the row index run 0..n-1, which is
+    # what write_fasta puts in the headers, so CD-HIT ids stay valid .loc labels.
     data = pd.concat([pos, neg], ignore_index=True)
 
     with tempfile.TemporaryDirectory() as tmp: # CD-HIT scratch files, auto-deleted
-        print("group-aware split (no test sequence >40% identical to train)")
         data["Split"] = "train" # every sequence starts in train
         long = data[data.Length >= MIN_CDHIT_LEN]  # CD-HIT handles these
         short = data[data.Length < MIN_CDHIT_LEN]  # too short for 40% identity
@@ -155,6 +154,7 @@ def main():
         # Cluster the long sequences (positives + negatives together) and assign
         # whole clusters to test until TEST_FRACTION is reached. Keeping a cluster
         # intact is what stops near-duplicates leaking across the train/test line.
+        # Clusters are never split, so the last one added overshoots the target.
         clusters = cd_hit_clusters(long, tmp)
         rng.shuffle(clusters)
         target = round(len(long) * TEST_FRACTION)
@@ -163,10 +163,10 @@ def main():
             if n >= target:
                 break
             test_ids += c; n += len(c)
-        data.loc[test_ids, "Split"] = "test"
+        data.loc[test_ids, "Split"] = "test" # ids came from the FASTA headers, so they're valid .loc labels
 
-        # Short sequences: 40% identity is meaningless here, so just do a
-        # stratified random split per class instead.
+        # Short sequences get a stratified random split per class instead, since
+        # 40% identity is meaningless here.
         for cls in ("positive", "negative"):
             ids = list(short.index[short.Class == cls])
             rng.shuffle(ids)
@@ -185,29 +185,16 @@ def main():
                 break
             data.loc[sorted(leak), "Split"] = "train"
 
-        # Verify leakage is actually zero before writing out.
+        # Verify leakage is actually zero before writing out. The loop above exits
+        # on either a clean pass or 15 attempts, so this catches the second case.
         tr = data[(data.Split == "train") & (data.Length >= MIN_CDHIT_LEN)]
         te = data[(data.Split == "test") & (data.Length >= MIN_CDHIT_LEN)]
         residual = len(te) - len(cd_hit_2d_kept(tr, te, tmp)) if len(te) else 0
-        n_train = (data.Split == "train").sum()
-        n_test  = (data.Split == "test").sum()
-
-        # Final summary of the split and leakage check.
-        print(f"  split: {n_train} train / {n_test} test")
-        print(f"  leakage check: {residual} test sequences too close to train (want 0)")
+        assert residual == 0, f"{residual} test sequences still >40% identical to train"
 
     # Write out the split to CSV, keeping only the relevant columns.
     out = data[["Sequence", "Label", "Length", "Class", "NegType", "Split"]]
     out.to_csv(OUTPUT_CSV, index=False)
-
-    # Final summary of the split and leakage check.
-    n_pos = (out.Class == "positive").sum()
-    n_neg = (out.Class == "negative").sum()
-    pos_mean = data[data.Class == "positive"]["Length"].mean()
-    neg_mean = data[data.Class == "negative"]["Length"].mean()
-    print(f"Saved {len(out)} sequences ({n_pos} positives, {n_neg} negatives) to {OUTPUT_CSV}")
-    print(f"  mean length: positives {pos_mean:.1f}, negatives {neg_mean:.1f}")
-    print(pd.crosstab(out.Split, out.Class)) # .crosstab shows the counts of positives and negatives in train/test splits
 
 
 if __name__ == "__main__":

@@ -27,7 +27,7 @@ import requests
 
 
 # --------------------------------------------------------------------------- #
-# DEFINE GLOBAL VARIABLES
+# CONFIG
 # --------------------------------------------------------------------------- #
 POSITIVES_CSV = "data/positives_ADP.csv"
 OUTPUT_CSV = "data/negatives.csv"
