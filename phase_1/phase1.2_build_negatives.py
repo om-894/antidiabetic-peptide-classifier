@@ -4,7 +4,7 @@ Phase 1.2: Build the dual-negative class (1:1 with the 966 ADP positives).
 
 Length-matched exactly: one negative per positive at the same length, so the
 negative length distribution mirrors the positives (no length signal to exploit).
-At each length, soft negatives are used first; any shortfall is filled with hard
+At each length, soft negatives are used first. Any shortfall is filled with hard
 negatives (excisable at any length, so short lengths still fill).
 
   Soft  -> DBAASP antimicrobial peptides, standard amino acids only.
@@ -12,7 +12,7 @@ negatives (excisable at any length, so short lengths still fill).
            glucose homeostasis / insulin signalling / hormone activity.
 
 INPUTS   positives_ADP.csv (966 positives), peptides.csv (DBAASP export)
-RUN      pip install requests pandas numpy && python build_negatives.py
+OUTPUTS  negatives.csv (966 negatives: Sequence, Label=0, Length, NegType [soft/hard])
 """
 
 # Imports
@@ -50,13 +50,13 @@ HARD_PROTEIN_LENMAX = 2000
 
 # keep only sequences of the 20 standard amino acids 
 # this drops X/B/Z/U and DBAASP's lowercase D-amino-acid (modified) peptides.
-STANDARD_AA = set("ACDEFGHIKLMNPQRSTVWY") # 
+STANDARD_AA = set("ACDEFGHIKLMNPQRSTVWY")
 def is_standard(seq: str) -> bool:
     return len(seq) > 0 and set(seq).issubset(STANDARD_AA)
 
 
 # --------------------------------------------------------------------------- #
-# SOFT POOL  (DBAASP)
+# SOFT POOL (DBAASP)
 # --------------------------------------------------------------------------- #
 def load_soft_by_length(csv_path: str, exclude: set) -> dict:
     """Read DBAASP CSV -> {length: [unique standard sequences]} excluding any
@@ -92,7 +92,7 @@ def load_soft_by_length(csv_path: str, exclude: set) -> dict:
 
 
 # --------------------------------------------------------------------------- #
-# HARD POOL  (Swiss-Prot via UniProt)
+# HARD POOL (Swiss-Prot via UniProt)
 # --------------------------------------------------------------------------- #
 def fetch_swissprot_pool(n_proteins: int) -> list:
 
@@ -100,18 +100,17 @@ def fetch_swissprot_pool(n_proteins: int) -> list:
     not_go = " OR ".join(f"go:{g}" for g in EXCLUDE_GO)
     
     # UniProt search query:
-    #   reviewed:true     -> Swiss-Prot only (manually curated, high quality)
-    #   fragment:false    -> whole protein entries, not partial sequences
+    #   reviewed:true -> Swiss-Prot only (manually curated, high quality)
+    #   fragment:false -> whole protein entries, not partial sequences
     #   length:[MIN TO MAX] -> sane-sized proteins to excise fragments from
-    #   NOT (go terms)    -> drop glucose-homeostasis / insulin / hormone proteins,
-    #                        so a random fragment can't secretly be ADP-like
+    #   NOT (go terms) -> drop glucose-homeostasis / insulin / hormone proteins,
+    #                      so a random fragment can't secretly be ADP-like
     query = (f"reviewed:true AND fragment:false "
              f"AND length:[{HARD_PROTEIN_LENMIN} TO {HARD_PROTEIN_LENMAX}] "
              f"NOT ({not_go})")
-    print(f"[hard] querying UniProt: {query}") # print the query for debugging purposes
     
     proteins, url, first = [], "https://rest.uniprot.org/uniprotkb/search", True
-    params = {"query": query, "format": "fasta", "size": 500} # # 500 results per page
+    params = {"query": query, "format": "fasta", "size": 500} # 500 results per page
     sess = requests.Session() # reuse one connection
     
     # First call sends the query params, later calls follow UniProt's "next"
@@ -171,7 +170,7 @@ def main():
 
     # Soft pool grouped by length (positives already excluded inside the loader).
     soft_by_len = load_soft_by_length(SOFT_CSV, pos_seqs)
-    for L in soft_by_len:                       # shuffle for reproducible draws
+    for L in soft_by_len: # shuffle for reproducible draws
         rng.shuffle(soft_by_len[L])
 
     # Per-length cap on how many soft negatives to use. By default = all available
@@ -188,7 +187,6 @@ def main():
 
     # Hard-negative source proteins (fetched once, reused for every length).
     proteins = fetch_swissprot_pool(HARD_POOL_SIZE)
-    print(f"[hard] pool: {len(proteins)} standard proteins\n")
 
     # `taken` seeds with the positives so no negative can equal a positive and it
     # grows as we pick negatives meaning that every negative stays globally unique.
@@ -217,11 +215,6 @@ def main():
     # Final safety deduplication, then write out to csv
     neg = pd.DataFrame(rows).drop_duplicates("Sequence").reset_index(drop=True)
     neg.to_csv(OUTPUT_CSV, index=False)
-
-    print(f"Saved {len(neg)} negatives to {OUTPUT_CSV}")
-    print(f"  soft (DBAASP):  {soft_n} ({soft_n/len(neg):.0%})")
-    print(f"  hard (UniProt): {hard_n} ({hard_n/len(neg):.0%})")
-    print(f"  mean length: positives {pos['Length'].mean():.1f}, negatives {neg['Length'].mean():.1f}")
 
 
 if __name__ == "__main__":
