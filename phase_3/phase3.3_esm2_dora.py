@@ -62,16 +62,16 @@ FOLDS = 5
 
 # tokenisation / training
 MAX_LEN = 64 # max tokens; dataset max is 41 residues plus <cls>/<eos>, so 64 is safe
-BATCH_SIZE = 16
+BATCH_SIZE = 16 # 32 hit OOM on the A40 at MAX_LEN 64
 MAX_EPOCHS = 20
 PATIENCE = 4 # stop after 4 epochs of no val-loss improvement
-LR = 2e-4 # adapter learning rate, higher than typical full fine-tuning
+LR = 2e-4
 WEIGHT_DECAY = 0.01 # L2 regularisation
-WARMUP_FRAC = 0.10 # ramp LR up over the first 10% of steps, stabilises early training
-INTERNAL_VAL_FRAC = 0.12 # carved from each fold's train portion for early stopping
+WARMUP_FRAC = 0.10
+INTERNAL_VAL_FRAC = 0.12 # the 12% in section 2.3
 
 # DoRA adapter config
-DORA_R = 16 # rank of the low-rank update, sets adapter capacity
+DORA_R = 16 # rank and alpha follow the DoRA paper's defaults
 DORA_ALPHA = 32 # adapter scaling, alpha / r gives the effective strength
 DORA_DROPOUT = 0.05
 TARGET_MODULES = ["query", "key", "value"] # the attention query/key/value projections
