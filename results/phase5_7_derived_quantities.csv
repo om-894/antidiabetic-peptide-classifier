@@ -1,0 +1,19 @@
+quantity,value,source
+site_residues_total,22,haddock_active_residues.txt
+site_acidic_n,4,receptor_DPP4_4A5S.pdb
+site_acidic,"GLU205, GLU206, ASP545, ASP663",receptor_DPP4_4A5S.pdb
+site_basic_n,2,receptor_DPP4_4A5S.pdb
+site_basic,"ARG125, LYS554",receptor_DPP4_4A5S.pdb
+site_aromatic_n,8,receptor_DPP4_4A5S.pdb
+site_aromatic,"PHE357, TYR547, TRP627, TRP629, TYR631, TRP659, TYR662, TYR666",receptor_DPP4_4A5S.pdb
+pose_contacts_total,19,phase5_5_pose_contacts.csv
+pose_contacts_phe,15,phase5_5_pose_contacts.csv
+pose_contacts_glu7,0,phase5_5_pose_contacts.csv
+glu7_nearest_site_residue,125,phase5_5_pose_contacts.csv
+glu7_nearest_dist_A,5.32,phase5_5_pose_contacts.csv
+phe_contacts_to_aromatic,7,phase5_5_pose_contacts_full.csv
+aromatic_partners_distinct,5,phase5_5_pose_contacts_full.csv
+aromatic_partners,"PHE357, TRP627, TRP629, TYR547, TYR631",phase5_5_pose_contacts_full.csv
+tier1_top_ranked,"GPFPSIL (consensus 0.9976, ToxinPred2 0.652)",tiered_discovery.csv
+tier1_top_passing_toxinpred2,"FVAPFPEVF (consensus 0.9968, ToxinPred2 0.588)",tiered_discovery.csv
+toxinpred2_cut,0.6,phase5.4_safety_select.py
