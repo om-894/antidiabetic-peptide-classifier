@@ -11,7 +11,7 @@ negatives (excisable at any length, so short lengths still fill).
   Hard  -> random Swiss-Prot fragments (UniProt REST API), excluding GO (Gene Ontology) terms for
            glucose homeostasis / insulin signalling / hormone activity.
 
-INPUTS   positives_ADP.csv (966 positives), peptides.csv (DBAASP export)
+INPUTS  positives_ADP.csv (966 positives), peptides.csv (DBAASP export)
 OUTPUTS  negatives.csv (966 negatives: Sequence, Label=0, Length, NegType [soft/hard])
 """
 

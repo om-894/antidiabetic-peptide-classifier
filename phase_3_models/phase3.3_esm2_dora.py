@@ -12,13 +12,13 @@ Row alignment with rf/xgb/cnn comes from reusing their OOF scheme, which is
 StratifiedKFold(5, shuffle=True, random_state=42) over dataset_split.csv train
 rows, plus a final all-train fit to predict the test rows.
 
-INPUTS        dataset_split.csv (1932 rows with Sequence, Label, Split)
-OUTPUTS       esm2_dora_predictions.npz (esm_oof, esm_test, y_train, y_test, sequences)
-              esm2_dora_adapter/ DoRA adapter weights, reloaded in phase 5.2 and 5.6
+INPUTS  dataset_split.csv (1932 rows with Sequence, Label, Split)
+OUTPUTS  esm2_dora_predictions.npz (esm_oof, esm_test, y_train, y_test, sequences)
+         esm2_dora_adapter/ DoRA adapter weights, reloaded in phase 5.2 and 5.6
 REQUIREMENTS  pip install torch transformers peft accelerate pandas numpy scikit-learn
               Model must be pre-cached on a login node (GPU nodes have no internet;
               set TRANSFORMERS_OFFLINE=1).
-ENV VARS      TEST_RUN=1 runs 1 fold x 1 epoch on 64 rows to validate the path
+ENV VARS  TEST_RUN=1 runs 1 fold x 1 epoch on 64 rows to validate the path
 """
 
 # Imports

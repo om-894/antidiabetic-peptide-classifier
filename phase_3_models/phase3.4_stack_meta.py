@@ -13,10 +13,10 @@ stack_test comes from an LR fit on all OOF rows, applied to the base test probab
   logit -> log-odds transform first
   no-cnn -> drop the weakest base learner
 
-INPUTS        base_tree_predictions.npz (rf, xgb), base_cnn_predictions.npz (cnn),
-              esm2_dora_predictions.npz (esm), all row-aligned OOF plus test
-OUTPUTS       stack_predictions.npz, stack_meta.joblib, stack_sensitivity.csv
-ENV VARS      TREE_NPZ, CNN_NPZ override the inputs. STACK_TAG suffixes the outputs
+INPUTS  base_tree_predictions.npz (rf, xgb), base_cnn_predictions.npz (cnn),
+        esm2_dora_predictions.npz (esm), all row-aligned OOF plus test
+OUTPUTS  stack_predictions.npz, stack_meta.joblib, stack_sensitivity.csv
+ENV VARS  TREE_NPZ, CNN_NPZ override the inputs. STACK_TAG suffixes the outputs
 REQUIREMENTS  pip install scikit-learn numpy joblib
 """
 

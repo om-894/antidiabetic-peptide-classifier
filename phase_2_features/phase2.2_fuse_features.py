@@ -16,8 +16,8 @@ Only the descriptors are normalised, since the embeddings are already well-scale
 Fitting the mean and std on train rows alone keeps the test set out of the
 normalisation. Both are saved so the same transform reaches novel candidates later.
 
-INPUTS        esm2_embeddings.npz (X, sequences, label, split)
-OUTPUTS       fusion_vectors.npz (X [N, 1287], descriptors_raw, descriptor_names,
+INPUTS  esm2_embeddings.npz (X, sequences, label, split)
+OUTPUTS  fusion_vectors.npz (X [N, 1287], descriptors_raw, descriptor_names,
               desc_mean, desc_std, sequences, label, split)
 REQUIREMENTS  pip install peptides scikit-learn numpy
 """

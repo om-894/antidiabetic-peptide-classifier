@@ -1,21 +1,24 @@
 
 """
-Phase 3 tuning: Optuna (Bayesian/TPE) with nested cross-validation for the three
-local base learners (XGBoost, RF, 1D-CNN) on the fused vector. ESM-2 is not tuned
-(full nested tuning of a 650M model is expensive and low-ROI; it keeps its DoRA config).
+Phase 3.5: Optuna (TPE) tuning with nested cross-validation for the three local
+base learners (XGBoost, RF, 1D-CNN) on the fused vector. ESM-2 keeps its DoRA
+config, since nested tuning of a 650M model is prohibitively expensive.
 
-Nested CV: outer folds give an unbiased OOF; an inner CV inside each outer-training
-split picks the hyperparameters without seeing that fold, so the OOF isn't optimistic
-about the tuning. The outer folds are the same StratifiedKFold(5, seed=42) as the other
-learners, so the tuned OOF/test stay row-aligned for the meta-learner.
+Outer folds give an unbiased OOF while an inner CV inside each outer-training
+split picks the hyperparameters without seeing that fold. The outer folds are the
+same StratifiedKFold(5, shuffle=True, random_state=42) as the other learners, so
+the tuned predictions stay row-aligned for the meta-learner.
 
-Per model: outer 5-fold -> tuned *_oof; final tune on all train -> tuned *_test + model.
-Outputs (new files; untuned baselines kept for comparison):
-  base_tree_predictions_tuned.npz, base_cnn_predictions_tuned.npz,
-  base_{xgb,rf}_tuned.joblib, base_cnn_tuned.pt, optuna_best_params.json
+Per model, the outer 5-fold gives tuned *_oof, then a final tune on all train
+gives tuned *_test and the saved model. Untuned baselines are kept for comparison.
 
-ENV VARS  MODELS=xgb,rf,cnn (which to tune) | TREE_TRIALS=40 | CNN_TRIALS=20 |
-          SMOKE=1 (2 trials, 1 fold — fast path check)
+INPUTS        fusion_vectors.npz (X, label, split)
+OUTPUTS       base_tree_predictions_tuned.npz, base_cnn_predictions_tuned.npz,
+              base_xgb_tuned.joblib, base_rf_tuned.joblib, base_cnn_tuned.pt,
+              optuna_best_params.json
+ENV VARS      MODELS=xgb,rf,cnn selects what to tune. TREE_TRIALS and CNN_TRIALS
+              set the budget. TEST_RUN=1 runs 2 trials on 1 fold as a path check
+REQUIREMENTS  pip install optuna scikit-learn xgboost torch numpy joblib
 """
 
 # Imports
