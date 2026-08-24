@@ -33,11 +33,11 @@ from sklearn.metrics import accuracy_score, matthews_corrcoef, roc_auc_score
 # --------------------------------------------------------------------------- #
 
 HERE = os.path.dirname(os.path.abspath(__file__)) # this ablation folder
-DATASET_SPLIT = os.path.join(HERE, "..", "data", "dataset_split.csv") # main pipeline split
-BASITH_SPLIT = os.path.join(HERE, "dataset_split_basith.csv")
-DUAL_NPZ = os.path.join(HERE, "..", "predictions", "esm2_dora_predictions.npz") # main run
-BASITH_NPZ = os.path.join(HERE, "..", "predictions", "esm2_dora_basith_predictions.npz") # ablation run
-OUT = os.path.join(HERE, "..", "results") # shared results folder, one level up
+DATASET_SPLIT = "data/dataset_split.csv"
+BASITH_SPLIT = os.path.join(HERE, "dataset_split_basith.csv") # from phase 3.6.2
+DUAL_NPZ = "predictions/esm2_dora_predictions.npz" # main run
+BASITH_NPZ = "predictions/esm2_dora_basith_predictions.npz" # ablation run
+OUT = "results" # shared results folder at the repo root
 
 THRESHOLD = 0.5 # the operating point every count below is taken at
 
@@ -67,8 +67,8 @@ def main():
     # NegType comes from the main split rather than the Basith one, since the
     # test rows are identical in both and only the main split labels them
     seqs = test["Sequence"].tolist()
-    models = [("dual-neg", test_probs(DUAL_NPZ, seqs, "dual-neg")),
-              ("basith", test_probs(BASITH_NPZ, seqs, "basith"))]
+    models = [("dual-neg", test_probs(DUAL_NPZ, seqs)),
+              ("basith", test_probs(BASITH_NPZ, seqs))]
 
     y = test["Label"].to_numpy()
     pos = (test.Label == 1).to_numpy()

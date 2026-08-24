@@ -32,7 +32,7 @@ Produces `predictions/esm2_dora_predictions.npz` and `models/esm2_dora_adapter/`
 
 From **Mac**:
 ```bash
-scp phase3.3_esm2_dora.py phase3.3_esm2_dora.sbatch *****@viking.york.ac.uk:~/adp/
+scp phase_3_models/phase3.3_esm2_dora.py phase_3_models/phase3.3_esm2_dora.sbatch *****@viking.york.ac.uk:~/adp/
 scp data/dataset_split.csv *****@viking.york.ac.uk:~/adp/data/
 ```
 On **Viking** (5-fold OOF + final fit, ~15 min):
@@ -53,13 +53,13 @@ Produces `predictions/esm2_dora_basith_predictions.npz`. Uses the same script wi
 
 From **Mac**:
 ```bash
-scp phase3.3_esm2_dora.py phase3.6_negative_class_ablation/esm2_dora_basith.sbatch *****@viking.york.ac.uk:~/adp/
-scp phase3.6_negative_class_ablation/dataset_split_basith.csv *****@viking.york.ac.uk:~/adp/data/
+scp phase_3_models/phase3.3_esm2_dora.py phase_3_models/phase3.6_negative_class_ablation/phase3.6.3_esm2_dora_basith.sbatch *****@viking.york.ac.uk:~/adp/
+scp phase_3_models/phase3.6_negative_class_ablation/dataset_split_basith.csv *****@viking.york.ac.uk:~/adp/data/
 ```
 On **Viking** (single fit, ~3–4 min):
 ```bash
 cd ~/adp
-sbatch esm2_dora_basith.sbatch
+sbatch phase3.6.3_esm2_dora_basith.sbatch
 squeue -u *****
 ```
 Retrieve to **Mac**:

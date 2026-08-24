@@ -32,7 +32,7 @@ import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__)) # this ablation folder
 RAW = os.path.join(HERE, "basith_raw") # inputs live beside this script
-DATASET_SPLIT = os.path.join(HERE, "..", "data", "dataset_split.csv") # main pipeline split
+DATASET_SPLIT = "data/dataset_split.csv" # repo root, as in every other phase script
 POOL_OUT = os.path.join(HERE, "basith_negatives_pool.csv") # outputs stay in this folder
 NEG_OUT = os.path.join(HERE, "basith_negatives.csv")
 
