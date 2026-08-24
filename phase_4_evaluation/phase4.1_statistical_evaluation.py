@@ -192,3 +192,6 @@ def main():
 
     pd.DataFrame(ci_rows).to_csv(os.path.join(RESULTS_DIR, "phase4_1_metrics_ci.csv"), index=False)
     pd.DataFrame(test_rows).to_csv(os.path.join(RESULTS_DIR, "phase4_1_pairwise_tests.csv"), index=False)
+
+if __name__ == "__main__":
+    main()
