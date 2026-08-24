@@ -1,25 +1,22 @@
 
 """
-Phase 3.4: stack the four base learners with a logistic-regression
-meta-learner and test Aim 3 — whether ensembling beats the best single model
-(ESM-2/DoRA, test AUC 0.877).
+Phase 3.4: Stack the four base learners with a logistic-regression meta-learner
+(Aim 1, ensemble against its best member, ESM-2/DoRA at test AUC 0.877).
 
-Inputs (each row-aligned OOF + test probabilities):
-  rf, xgb <- base_tree_predictions.npz ; cnn <- base_cnn_predictions.npz ;
-  esm     <- esm2_dora_predictions.npz
+Trained on out-of-fold probabilities rather than in-sample fits, so the four
+columns are honest. stack_oof comes from cross_val_predict over the same
+StratifiedKFold(5, shuffle=True, random_state=42) the base learners used.
+stack_test comes from an LR fit on all OOF rows, applied to the base test probabilities.
 
-Primary (per the outline): logistic regression on the four raw OOF probabilities.
-Sensitivity variants confirm the conclusion isn't config-specific:
-  std    standardise the meta-features (comparable coefficients)
-  logit  log-odds transform before the LR
-  no-cnn drop the weak CNN
+  primary -> LR on the four raw OOF probabilities
+  std -> standardise inside a Pipeline, refit per fold so nothing leaks
+  logit -> log-odds transform first
+  no-cnn -> drop the weakest base learner
 
-Method: train on the out-of-fold probabilities (honest, not in-sample).
-stack_oof = cross_val_predict over the same StratifiedKFold(5, seed=42);
-stack_test = LR fit on all OOF rows, applied to the base test probabilities.
-Standardisation sits inside a Pipeline so it re-fits per fold (no leakage).
-
-OUTPUTS  stack_predictions.npz, stack_meta.joblib, stack_sensitivity.csv
+INPUTS        base_tree_predictions.npz (rf, xgb), base_cnn_predictions.npz (cnn),
+              esm2_dora_predictions.npz (esm), all row-aligned OOF plus test
+OUTPUTS       stack_predictions.npz, stack_meta.joblib, stack_sensitivity.csv
+ENV VARS      TREE_NPZ, CNN_NPZ override the inputs. STACK_TAG suffixes the outputs
 REQUIREMENTS  pip install scikit-learn numpy joblib
 """
 
@@ -36,40 +33,43 @@ from sklearn.model_selection import StratifiedKFold, cross_val_predict
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-SEED, FOLDS = 42, 5
-BASE_NAMES = ["rf", "xgb", "cnn", "esm"]
-
-# inputs (override via env to stack the Optuna-tuned base learners)
-TREE_NPZ = os.environ.get("TREE_NPZ", "predictions/base_tree_predictions.npz")
-CNN_NPZ  = os.environ.get("CNN_NPZ",  "predictions/base_cnn_predictions.npz")
-TAG = os.environ.get("STACK_TAG", "")          # e.g. "_tuned" -> separate outputs
-OUT_NPZ  = f"predictions/stack_predictions{TAG}.npz"     # -> predictions/
-OUT_META = f"models/stack_meta{TAG}.joblib"              # -> models/
-OUT_CSV  = f"predictions/stack_sensitivity{TAG}.csv"     # -> predictions/
-
 
 # --------------------------------------------------------------------------- #
 # CONFIG
 # --------------------------------------------------------------------------- #
 
+SEED = 42
+FOLDS = 5
+BASE_NAMES = ["rf", "xgb", "cnn", "esm"] # column order of the meta-feature matrix
+
+# inputs (override via env to stack the Optuna-tuned base learners). esm has no
+# tuned variant, so its path stays fixed inside load_bases().
+TREE_NPZ = os.environ.get("TREE_NPZ", "predictions/base_tree_predictions.npz")
+CNN_NPZ  = os.environ.get("CNN_NPZ", "predictions/base_cnn_predictions.npz")
+
+TAG = os.environ.get("STACK_TAG", "") # e.g. "_tuned" for separate outputs
+OUT_NPZ = f"predictions/stack_predictions{TAG}.npz"
+OUT_META = f"models/stack_meta{TAG}.joblib"
+OUT_CSV = f"predictions/stack_sensitivity{TAG}.csv"
+
+
 def load_bases():
-    # Load the three base-learner prediction files.
+    # three files for four learners, since rf and xgb share one. allow_pickle is
+    # only needed for esm, whose npz carries an object array of sequences.
     trees = np.load(TREE_NPZ)
     cnn = np.load(CNN_NPZ)
     esm = np.load("predictions/esm2_dora_predictions.npz", allow_pickle=True)
 
-    # Use the trees' labels as the reference, then assert the other two match.
-    # Identical y_train/y_test proves every OOF/test column refers to the same rows
-    # in the same order -> the precondition for stacking them column-wise.
+    # take the trees labels as the reference and check the other two match.
+    # matching label vectors catch gross misalignment but don't prove row order,
+    # since any label-preserving permutation would pass.
     ytr = trees["y_train"].astype(int)
     yte = trees["y_test"].astype(int)
-    
-    # Assert the other two match the trees' labels, else stacking is misaligned.
     for d in (cnn, esm):
         assert np.array_equal(d["y_train"].astype(int), ytr), "y_train misaligned"
         assert np.array_equal(d["y_test"].astype(int), yte), "y_test misaligned"
 
-    # Collect each learner's OOF (train) and test probabilities, keyed by name.
+    # each learner's OOF (train) and test probabilities, keyed by name.
     oof = {"rf": trees["rf_oof"], "xgb": trees["xgb_oof"],
            "cnn": cnn["cnn_oof"], "esm": esm["esm_oof"]}
     test = {"rf": trees["rf_test"], "xgb": trees["xgb_test"],
@@ -78,24 +78,22 @@ def load_bases():
 
 
 def logit(P, eps=1e-6):
-    # Log-odds transform: log(p/(1-p)). Clip away from 0 and 1 first to avoid inf.
+    # log-odds transform, log(p/(1-p)). clip away from 0 and 1 first to avoid inf.
     P = np.clip(P.astype(np.float64), eps, 1 - eps)
     return np.log(P / (1 - P))
 
 
 def metrics(y, p, thr=0.5):
-    # Standard classification metrics at a 0.5 threshold (AUC uses the probabilities).
+    # AUC scores the probabilities, everything else the thresholded predictions.
     ypred = (p > thr).astype(int)
-    
-
     return dict(AUC=roc_auc_score(y, p), ACC=accuracy_score(y, ypred),
                 MCC=matthews_corrcoef(y, ypred), F1=f1_score(y, ypred),
-                Prec=precision_score(y, ypred), Rec=recall_score(y, ypred))
+                PREC=precision_score(y, ypred), REC=recall_score(y, ypred))
 
 
 def make_estimator(standardize):
-    # The meta-learner: logistic regression, optionally with a StandardScaler in
-    # front. Wrapping in a Pipeline means the scaler is re-fit per CV fold (no leakage).
+    # logistic regression, optionally behind a StandardScaler. wrapping in a
+    # Pipeline is what makes the scaler refit per CV fold rather than leak.
     lr = LogisticRegression(max_iter=1000, random_state=SEED)
     if standardize:
         return Pipeline([("sc", StandardScaler()), ("lr", lr)])
@@ -103,25 +101,22 @@ def make_estimator(standardize):
 
 
 def run_variant(cols, transform, standardize, oof, test, ytr, yte):
-    # Build the meta-feature matrices from the chosen base learners (columns):
-    # train = their OOF probabilities, test = their test probabilities.
+    # meta-features from the chosen base learners, train from their OOF
+    # probabilities and test from their test probabilities.
     Xtr = np.column_stack([oof[c] for c in cols]).astype(np.float64)
     Xte = np.column_stack([test[c] for c in cols]).astype(np.float64)
-    
-    # Optional log-odds transform (logit) before the LR. Standardisation is handled
-    # inside the Pipeline, so it re-fits per fold (no leakage).
     if transform == "logit":
-        Xtr, Xte = logit(Xtr), logit(Xte)        # optional log-odds transform
+        Xtr, Xte = logit(Xtr), logit(Xte)
+
     est = make_estimator(standardize)
-    # stack_oof: honest train-set estimate, same 5-fold scheme as the base learners.
+
+    # honest train-set estimate on the same 5-fold scheme as the base learners
     skf = StratifiedKFold(n_splits=FOLDS, shuffle=True, random_state=SEED)
-    
-    # cross_val_predict gives OOF predictions for each row, honest estimate
     oof_p = cross_val_predict(est, Xtr, ytr, cv=skf, method="predict_proba")[:, 1]
-    
-    # stack_test: fit the meta-learner on all OOF rows, apply to the base test probs.
+
+    # cross_val_predict leaves est unfitted, so fit on all OOF rows for the test pass
     est.fit(Xtr, ytr)
-    test_p = est.predict_proba(Xte)[:, 1] # get test probabilities from the fitted meta-learner
+    test_p = est.predict_proba(Xte)[:, 1]
     return est, oof_p, test_p
 
 
