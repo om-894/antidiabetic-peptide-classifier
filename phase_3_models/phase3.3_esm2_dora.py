@@ -270,7 +270,7 @@ def main():
     else:
         n_folds, max_epochs = FOLDS, MAX_EPOCHS
 
-    print(f"loading tokenizer {MODEL_ID} ...")
+    print(f"loading tokenizer {MODEL_ID}")
     tok = AutoTokenizer.from_pretrained(MODEL_ID)
 
     # OOF predictions on the same folds as the trees and CNN. each train row gets
@@ -345,3 +345,6 @@ def main():
         sequences=np.array(tr_seqs + te_seqs, dtype=object),
     )
     print(f"saved -> {OUT_NPZ}")
+
+if __name__ == "__main__":
+    main()
