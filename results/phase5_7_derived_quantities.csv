@@ -17,3 +17,10 @@ aromatic_partners,"PHE357, TRP627, TRP629, TYR547, TYR631",phase5_5_pose_contact
 tier1_top_ranked,"GPFPSIL (consensus 0.9976, ToxinPred2 0.652)",tiered_discovery.csv
 tier1_top_passing_toxinpred2,"FVAPFPEVF (consensus 0.9968, ToxinPred2 0.588)",tiered_discovery.csv
 toxinpred2_cut,0.6,phase5.4_safety_select.py
+shortlist_n,412,screening_ranked.csv
+shortlist_tree_alone,324,screening_ranked.csv
+shortlist_esm_dependent,88,screening_ranked.csv
+shortlist_xgb_min,0.823,screening_ranked.csv
+esm_margin_median,0.106,screening_ranked.csv
+esm_margin_max,0.195,screening_ranked.csv
+lead_xgb_prob,0.995,screening_ranked.csv

@@ -22,6 +22,8 @@ import pandas as pd
 TOX_CUT = 0.6 # identical to phase5.4_safety_select.py
 CONTACT_CUT = 5.0 # identical to the n_contacts_within_5A column of phase 5.5
 ACIDIC, BASIC, AROMATIC = {"ASP", "GLU"}, {"ARG", "LYS"}, {"PHE", "TYR", "TRP"}
+DISCOVERY_THRESHOLD = 0.90  # identical to phase5.3_score_and_rank.py
+LEAD = "FVAPFPEVF"
 
 rows = []
 rec = lambda q, v, s: rows.append({"quantity": q, "value": v, "source": s})
@@ -85,6 +87,25 @@ def main():
     rec("tier1_top_ranked", describe(t1.iloc[0]), "tiered_discovery.csv")
     rec("tier1_top_passing_toxinpred2", describe(passing.iloc[0]), "tiered_discovery.csv")
     rec("toxinpred2_cut", TOX_CUT, "phase5.4_safety_select.py")
+
+    # ── how far the shortlist depends on the single ESM-2 seed fit ────────────
+    # Section 3.1 reports ESM-2 test AUC moving by +/-0.026 across seeds 42 to 46
+    # against +/-0.002 for XGBoost, so the consensus rests on one stable half and
+    # one that is not. Nothing is refit here. The margin is how far the ESM-2
+    # probability could fall before the consensus drops below the phase 5.3
+    # cutoff, with the tree held at its seed-42 value.
+    rank = pd.read_csv("screening/screening_ranked.csv")
+    disc = rank[rank.consensus >= DISCOVERY_THRESHOLD].copy()
+    disc["esm_margin"] = 2 * (disc.consensus - DISCOVERY_THRESHOLD)
+    tree_alone = disc.xgb_prob >= DISCOVERY_THRESHOLD
+    rec("shortlist_n", len(disc), "screening_ranked.csv")
+    rec("shortlist_tree_alone", int(tree_alone.sum()), "screening_ranked.csv")
+    rec("shortlist_esm_dependent", int((~tree_alone).sum()), "screening_ranked.csv")
+    rec("shortlist_xgb_min", round(disc.xgb_prob.min(), 3), "screening_ranked.csv")
+    rec("esm_margin_median", round(disc.esm_margin.median(), 3), "screening_ranked.csv")
+    rec("esm_margin_max", round(disc.esm_margin.max(), 3), "screening_ranked.csv")
+    rec("lead_xgb_prob", float(disc.loc[disc.sequence == LEAD, "xgb_prob"].iloc[0]),
+        "screening_ranked.csv")
 
     out = pd.DataFrame(rows)
     out.to_csv("results/phase5_7_derived_quantities.csv", index=False)
