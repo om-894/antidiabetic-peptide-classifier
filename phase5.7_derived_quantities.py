@@ -13,6 +13,7 @@ INPUT   docking/haddock_active_residues.txt       the 22 receptor residue number
         results/phase5_5_pose_contacts.csv        per-residue contact counts within 5 A
         results/phase5_5_pose_contacts_full.csv   atom-level contact list
         screening/tiered_discovery.csv            tier, consensus and safety calls
+        screening/screening_ranked.csv            consensus and XGBoost probabilities
 OUTPUT  results/phase5_7_derived_quantities.csv   quantity, value, source
 """
 
