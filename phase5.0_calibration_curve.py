@@ -1,27 +1,25 @@
 
-
 """
-Phase 5.0: Calibration curve for the consensus score - justifies the discovery threshold.
+Phase 5.0: Calibrate the consensus score so the discovery threshold means something.
 
-A "top-N" cutoff is arbitrary; a probability cutoff is only meaningful if the model is
-calibrated there. This builds a reliability diagram for the consensus (per bin: claimed
-confidence vs true positive rate) so the discovery threshold (e.g. 0.90) can be set where
-claimed is comparable to actual i.e. a score of 0.90 really does mean 90% chance of being an ADP.
+A top-N cutoff is arbitrary. A probability cutoff only carries meaning where the
+score is calibrated, so this builds a reliability diagram for the consensus then
+sweeps candidate cutoffs for the lowest one that still returns the target positive
+rate. That sweep is what sets the discovery threshold in phase 5.3.
 
-Uses the out-of-fold train predictions (1754 rows), not the 178-row test set, since the
-high-probability bins that set the threshold need enough samples. Score = consensus =
-mean(ESM-2/DoRA OOF, XGBoost OOF), as ranked in Phase 5.3.
+Calibration is measured on the 1,754 out-of-fold training rows rather than the
+178-row test set, since the high-probability bins that decide the threshold need
+enough samples to be worth trusting.
 
-Caveat (write-up): calibration is measured in-distribution; screening candidates are 
-OOD (out-of-distribution) food fragments with low ADP prevalence, so field precision 
-sits below this figure - the control dockings (Phase 5.5) are the independent check.
+The screening candidates are food fragments with a far lower ADP prevalence than
+this distribution, so the hit rate in the field sits below the figure here. The
+control dockings in phase 5.5 are the independent check on that.
 
-INPUT   predictions/esm2_dora_predictions.npz   esm_oof, y_train
-        predictions/base_tree_predictions.npz    xgb_oof, y_train
-OUTPUT  screening/consensus_calibration.csv       per-bin reliability table
-        results/phase5_0_calibration_summary.csv  ECE, row counts and operating points
-
-REQUIREMENTS  pip install numpy pandas
+INPUTS  esm2_dora_predictions.npz (esm_oof, esm_test, y_train, y_test)
+        base_tree_predictions.npz (xgb_oof, xgb_test, y_train)
+OUTPUTS  consensus_calibration.csv (per-bin reliability table, plotted in figures.ipynb)
+         phase5_0_calibration_summary.csv (every number section 3.3 quotes)
+REQUIREMENTS  pip install numpy pandas scikit-learn
 """
 
 # Imports
@@ -29,70 +27,55 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score
 
+
 # --------------------------------------------------------------------------- #
 # CONFIG
 # --------------------------------------------------------------------------- #
+
 ESM_NPZ = "predictions/esm2_dora_predictions.npz"
 TREE_NPZ = "predictions/base_tree_predictions.npz"
 OUT_CSV = "screening/consensus_calibration.csv"
-OUT_PNG = "screening/consensus_calibration.png"
 SUM_CSV = "results/phase5_0_calibration_summary.csv"
 
-TARGET_PRECISION = 0.90 # supervisor's goal: discoveries with >=~90% verified positive rate
-MIN_BIN_N = 30 # don't trust a threshold whose surviving set is tiny
-BINS = 10 # reliability-diagram resolution
+TARGET_PRECISION = 0.90 # the verified positive rate a discovery set has to reach
+MIN_BIN_N = 30 # a cutoff leaving fewer survivors than this is not worth trusting
+BINS = 10 # same binning phase 4.1 uses for ECE
 
 
 def reliability_table(y, p, bins=BINS):
-    """One row per probability bin = one point on the calibration curve.
-
-    The idea: group predictions by how confident the model was, then in each group
-    compare the model's average claim (mean_pred) to what actually happened (obs_pos,
-    the true positive fraction). A well-calibrated model has mean_pred ~ obs_pos in
-    every bin - i.e. of everything it scored ~0.9, about 90% really are positive.
-    """
-    edges, rows = np.linspace(0, 1, bins + 1), [] # bin boundaries: [0, .1, .2, ..., 1]
+    """One row per probability bin, the model's mean claim against what happened."""
+    # grouping by confidence is what makes miscalibration visible. a well-calibrated
+    # model has mean_pred close to obs_pos in every bin, so of everything it scored
+    # around 0.9, about 90% turn out to be positive
+    edges, rows = np.linspace(0, 1, bins + 1), []
     for i in range(bins):
-
-        # pick the predictions whose probability falls in this bin, (edges[i], edges[i+1]].
-        # the first bin is made inclusive of 0 so a prediction of exactly 0 isn't dropped.
+        # bins are half open, (edge, edge]. the first is closed at 0 instead, so a
+        # prediction of exactly 0 lands somewhere rather than being dropped
         m = (p > edges[i]) & (p <= edges[i + 1]) if i else (p >= 0) & (p <= edges[1])
-        if m.sum(): # skip empty bins (nothing to compare)
-            rows.append({
-                "bin":       f"({edges[i]:.1f}, {edges[i+1]:.1f}]",
-                "n":         int(m.sum()), # how many predictions in this bin (its weight/trust)
-                "mean_pred": p[m].mean(), # the model's average claimed probability here
-                "obs_pos":   y[m].mean(), # the observed fraction that are truly positive
-            })
-    return pd.DataFrame(rows) # compare mean_pred vs obs_pos -> the calibration curve
+        if m.sum():
+            rows.append({"bin": f"({edges[i]:.1f}, {edges[i+1]:.1f}]",
+                         "n": int(m.sum()),
+                         "mean_pred": p[m].mean(),
+                         "obs_pos": y[m].mean()})
+    return pd.DataFrame(rows)
 
 
 def operating_points(y, p, thresholds):
-    """One row per candidate threshold -> this is what actually picks the cutoff.
-
-    Where reliability_table looks within each bin, this looks at everything at or above
-     a cutoff (the set to keep as 'discoveries'). For each cutoff it
-    reports how many candidates survive and what fraction of them are truly positive
-    i.e. the precision you'd get if you drew the discovery line there. The chosen
-    threshold is the lowest cutoff whose survivors hit the target precision.
-    """
+    """One row per candidate cutoff, how many survive it and what share are positive."""
+    # where reliability_table looks inside a bin, this looks at everything at or above
+    # a cutoff, which is the set a screen would actually keep. empirical_pos_rate is
+    # therefore the precision you would get by drawing the discovery line there
     rows = []
     for t in thresholds:
-        m = p >= t # everything the cutoff would keep
-        rows.append({
-            "threshold": round(float(t), 2),
-            "n_above": int(m.sum()), # how many candidates survive this cutoff
-            
-            # fraction of survivors that are truly positive = precision at this cutoff.
-            # nan if nothing survives (can't take a mean of an empty set).
-            "empirical_pos_rate": (y[m].mean() if m.sum() else float("nan")),
-        })
+        m = p >= t
+        rows.append({"threshold": round(float(t), 2),
+                     "n_above": int(m.sum()),
+                     "empirical_pos_rate": y[m].mean() if m.sum() else float("nan")})
     return pd.DataFrame(rows)
 
 
 def ece(y, p, bins=BINS):
-    """Expected Calibration Error - one-number summary of the diagram (0 = perfect).
-    Same binning as phase 4.1, applied to the consensus."""
+    # duplicated from phase 4.1
     edges, e = np.linspace(0, 1, bins + 1), 0.0
     for i in range(bins):
         m = (p > edges[i]) & (p <= edges[i + 1]) if i else (p >= 0) & (p <= edges[1])
@@ -101,55 +84,50 @@ def ece(y, p, bins=BINS):
     return e
 
 
+# --------------------------------------------------------------------------- #
+# MAIN
+# --------------------------------------------------------------------------- #
 
 def main():
-    # Load the aligned OOF probabilities (stacking contract guarantees identical row
-    # order: StratifiedKFold(5, shuffle, random_state=42) over the train rows).
+    # both npz hold out-of-fold predictions over the same train rows in the same
+    # order, guaranteed by the shared StratifiedKFold in phase 3.3 and 3.1.
     esm, tree = np.load(ESM_NPZ, allow_pickle=True), np.load(TREE_NPZ, allow_pickle=True)
     y = esm["y_train"].astype(int)
-    assert np.array_equal(y, tree["y_train"].astype(int)), "OOF label order mismatch" # sanity check
-    consensus = 0.5 * (esm["esm_oof"].astype(float) + tree["xgb_oof"].astype(float))
-    print(f"OOF rows: {len(y)} ({y.sum()} positive) | consensus ECE {ece(y, consensus):.3f}")
+    assert np.array_equal(y, tree["y_train"].astype(int)), "OOF label order mismatch"
 
-    # Reliability diagram (per-bin) + operating points (cumulative).
-    rel = reliability_table(y, consensus)
-    print("\nReliability (per bin) -- mean_pred should track obs_pos:")
-    print(rel.to_string(index=False, float_format=lambda x: f"{x:.3f}"))
+    esm_oof, xgb_oof = esm["esm_oof"].astype(float), tree["xgb_oof"].astype(float)
+    consensus = 0.5 * (esm_oof + xgb_oof) # unweighted, as ranked in phase 5.3
 
-    ops = operating_points(y, consensus, np.arange(0.50, 0.991, 0.05))
-    print("\nOperating points (candidates at/above each cutoff, and their true-positive rate):")
-    print(ops.to_string(index=False, float_format=lambda x: f"{x:.3f}"))
-
-    # Recommended threshold: the lowest cutoff whose surviving set is >=TARGET_PRECISION
-    # positive and still well-populated (>=MIN_BIN_N). This keeps as many candidates as
-    # possible while honouring the "verified ~90% probability" goal.
+    # 0.01 steps rather than a large sweep, so the recommendation is not rounded
+    # up to a grid point that throws away candidates
     grid = operating_points(y, consensus, np.arange(0.50, 0.991, 0.01))
     ok = grid[(grid.empirical_pos_rate >= TARGET_PRECISION) & (grid.n_above >= MIN_BIN_N)]
     thr = float(ok.threshold.min()) if len(ok) else float("nan")
-    print(f"\nRecommended discovery threshold: consensus >= {thr:.2f}  "
-          f"(>= {TARGET_PRECISION:.0%} verified positive rate on held-out data)")
 
-    # persist the quoted numbers; previously print-only
-    esm_oof, xgb_oof = esm["esm_oof"].astype(float), tree["xgb_oof"].astype(float)
+    # summary table for section 3.3
     rows = [("n_oof", len(y)),
             ("n_oof_positive", int(y.sum())),
             ("ece_consensus_oof", round(ece(y, consensus), 4)),
             ("ece_esm2_oof", round(ece(y, esm_oof), 4)),
             ("ece_xgb_oof", round(ece(y, xgb_oof), 4)),
             ("recommended_threshold", thr)]
+
+    # both cutoffs are reported. the sweep recommends 0.87, phase 5.3 cuts at the
+    # rounder 0.90. Explained in section 2.5
     for t in (thr, 0.90):
-        r = grid[grid.threshold == round(t, 2)].iloc[0] # operating point at this cutoff
+        r = grid[grid.threshold == round(t, 2)].iloc[0]
         rows += [(f"n_above_{t:.2f}", int(r.n_above)),
                  (f"pos_rate_{t:.2f}", round(float(r.empirical_pos_rate), 4))]
 
-    # the consensus on the held-out test set, quoted in Section 3.3 beside the OOF
+    # the consensus on the held-out test set, quoted in section 3.3 beside the OOF
     # figures. computed here so all four calibration numbers live in one file
     yte = esm["y_test"].astype(int)
-    cons_te = 0.5 * (esm["esm_test"].astype(float) + tree["xgb_test"].astype(float))
+    esm_te = esm["esm_test"].astype(float)
+    cons_te = 0.5 * (esm_te + tree["xgb_test"].astype(float))
     rows += [("test_auc_consensus", round(roc_auc_score(yte, cons_te), 4)),
              ("test_ece_consensus", round(ece(yte, cons_te), 4)),
-             ("test_auc_esm2", round(roc_auc_score(yte, esm["esm_test"].astype(float)), 4)),
-             ("test_ece_esm2", round(ece(yte, esm["esm_test"].astype(float)), 4))]
+             ("test_auc_esm2", round(roc_auc_score(yte, esm_te), 4)),
+             ("test_ece_esm2", round(ece(yte, esm_te), 4))]
 
     # the same 0.90 cutoff applied to the test set, so the out-of-fold rate has a
     # held-out comparison. these are the peptides a threshold set on the training
@@ -159,11 +137,8 @@ def main():
              ("n_test_above_0.90_positive", int(yte[mte].sum())),
              ("pos_rate_test_0.90", round(float(yte[mte].mean()), 4))]
 
-    rel.to_csv(OUT_CSV, index=False)
-
-    rel.to_csv(OUT_CSV, index=False)
+    reliability_table(y, consensus).to_csv(OUT_CSV, index=False)
     pd.DataFrame(rows, columns=["quantity", "value"]).to_csv(SUM_CSV, index=False)
-    print(f"saved {OUT_CSV} and {SUM_CSV}")
 
 
 if __name__ == "__main__":
