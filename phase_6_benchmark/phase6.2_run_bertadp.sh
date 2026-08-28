@@ -1,14 +1,17 @@
-
 #!/usr/bin/env bash
 # Phase 6.2: run BertADP (Xie et al. 2025) on an input CSV.
 #
-# Automates the external-benchmark inference: clone the BertADP repo, build an isolated
-# venv with BertADP's pinned versions (so it doesn't clash with the project env), run
-# their released BertADP.py and copy the result into benchmark/. Clone + venv happen
-# once; later calls just run inference.
+# Automates the external-benchmark inference. Clones the BertADP repo, builds an
+# isolated venv at BertADP's pinned versions so it cannot clash with the project
+# environment, runs their released BertADP.py and copies the result into benchmark/.
+# The clone and the venv are built once, so later calls only run inference.
 #
-# Usage:  bash phase6.2_run_bertadp.sh   benchmark/bertadp_hardneg_test.csv
-# Output: benchmark/<input>_pred.csv     (Sequence, Positive_Probability, Prediction)
+# INPUTS  a CSV of sequences to score, written by phase 6.1
+# OUTPUTS  benchmark/<input>_pred.csv (Sequence, Positive_Probability, Prediction)
+# REQUIREMENTS  git, python3 and network access. Clones Xie's repo to ~/BertADP and
+#               builds a venv at ~/bertadp_env, both outside this project. ProtBert
+#               downloads to the HuggingFace cache on the first run
+# Usage  bash phase_6_benchmark/phase6.2_run_bertadp.sh benchmark/bertadp_hardneg_test.csv
 
 set -e
 
@@ -17,7 +20,7 @@ PROJECT="$(pwd)"
 REPO="$HOME/BertADP"
 VENV="$HOME/bertadp_env"
 
-# 1. clone BertADP once ( trained model + released inference script)
+# 1. clone BertADP once (trained model + released inference script)
 if [ ! -d "$REPO" ]; then
     git clone https://github.com/xiexq007/BertADP.git "$REPO"
 fi
