@@ -5,3 +5,6 @@ xgb_above_0.5,1433.0
 both_above_0.5,1188.0
 discoveries,412.0
 discovery_threshold,0.9
+n_multi_source_fragments,183.0
+per_protein_candidate_sum,4052.0
+per_protein_discovery_sum,414.0

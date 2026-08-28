@@ -1,0 +1,14 @@
+group,protein,source,candidates,discoveries,rate_pct,top_discovery,top_score
+"Bovine milk, casein",αs1-casein,bovine_alpha_s1_casein,213,38,17.8,FVAPFPEVF,0.997
+"Bovine milk, casein",αs2-casein,bovine_alpha_s2_casein,250,21,8.4,ALPQYL,0.987
+"Bovine milk, casein",β-casein,bovine_beta_casein,148,26,17.6,YPVEPFTE,0.988
+"Bovine milk, casein",κ-casein,bovine_kappa_casein,164,11,6.7,SPAQILQWQVLSNTVPAK,0.993
+"Bovine milk, whey",β-lactoglobulin,bovine_beta_lactoglobulin,212,22,10.4,LSFNPTQLEEQCHI,0.995
+"Bovine milk, whey",α-lactalbumin,bovine_alpha_lactalbumin,126,8,6.3,GGVSLPEWVCTTF,0.989
+"Bovine milk, whey",lactoferrin,bovine_lactoferrin,743,64,8.6,FVPAL,0.992
+"Bovine milk, whey",serum albumin,bovine_serum_albumin,751,69,9.2,LFTFHADICTLPDTEK,0.992
+Hen egg white,ovalbumin,chicken_ovalbumin,391,61,15.6,LPGF,0.996
+Hen egg white,lysozyme C,chicken_lysozyme_c,153,12,7.8,SSDITASVNCAKKIVSDGNGMNAWVAW,0.985
+Soybean,glycinin G1,soybean_glycinin_g1,446,44,9.9,TNDTPMIGTLAGANSLLNALPEEVIQHTFNLK,0.988
+Soybean,"β-conglycinin, β subunit 1",soybean_beta_conglycinin,455,38,8.4,GPFPSIL,0.998
+Total,,,3596,412,11.5,,

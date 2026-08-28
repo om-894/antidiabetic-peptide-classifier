@@ -20,6 +20,9 @@ Novelty is scored here as well, as the highest difflib ratio between a candidate
 and any training positive. Candidates under 11 aa bypassed the cd-hit filter in
 phase 5.1, so this quantifies how close the pool really sits to the training set.
 
+The pool is also broken down by source protein, which is the table reporting what
+each precursor contributed and how far its yield tracks its length.
+
 INPUTS  screening_esm2.npz (X_emb, esm_prob, peptide_id, sequence)
         screening_candidates.csv (length, sources, enzymes)
         fusion_vectors.npz (desc_mean, desc_std, the saved train z-score)
@@ -28,6 +31,7 @@ OUTPUTS  screening_ranked.csv (every candidate, both scores, ranked)
          screening_discovery.csv (the calibrated set, feeds phase 5.4)
          screening_shortlist.csv (the older both-models-agree set)
          phase5_3_novelty.csv, phase5_3_novelty_summary.csv, phase5_3_score_funnel.csv
+         phase5_3_per_protein.csv (the per-source breakdown)
 REQUIREMENTS  pip install xgboost scikit-learn joblib peptides pandas numpy scipy
 """
 
@@ -57,6 +61,7 @@ OUT_SHORTLIST = "screening/screening_shortlist.csv"
 OUT_NOVELTY = "results/phase5_3_novelty.csv"
 OUT_NOVELTY_SUM = "results/phase5_3_novelty_summary.csv"
 OUT_SCORE_FUNNEL = "results/phase5_3_score_funnel.csv"
+OUT_PER_PROTEIN = "results/phase5_3_per_protein.csv"
 
 # phase 5.0's sweep permits 0.87. 0.90 is the conservative choice, sitting in the
 # top calibration bin where 450 out-of-fold peptides came in at 90.9% positive
@@ -72,6 +77,23 @@ DESCRIPTOR_NAMES = [
     "net_charge_pH7.4", "gravy_kd", "isoelectric_point", "aromaticity",
     "instability_index", "aliphatic_index", "boman_index",
 ]
+
+# the twelve keys phase 5.1 writes into the sources column, mapped to the group and
+# name the report prints and held in the row order the report tabulates them in
+SOURCE_LABELS = {
+    "bovine_alpha_s1_casein": ("Bovine milk, casein", "αs1-casein"),
+    "bovine_alpha_s2_casein": ("Bovine milk, casein", "αs2-casein"),
+    "bovine_beta_casein": ("Bovine milk, casein", "β-casein"),
+    "bovine_kappa_casein": ("Bovine milk, casein", "κ-casein"),
+    "bovine_beta_lactoglobulin": ("Bovine milk, whey", "β-lactoglobulin"),
+    "bovine_alpha_lactalbumin": ("Bovine milk, whey", "α-lactalbumin"),
+    "bovine_lactoferrin": ("Bovine milk, whey", "lactoferrin"),
+    "bovine_serum_albumin": ("Bovine milk, whey", "serum albumin"),
+    "chicken_ovalbumin": ("Hen egg white", "ovalbumin"),
+    "chicken_lysozyme_c": ("Hen egg white", "lysozyme C"),
+    "soybean_glycinin_g1": ("Soybean", "glycinin G1"),
+    "soybean_beta_conglycinin": ("Soybean", "β-conglycinin, β subunit 1"),
+}
 
 
 def descriptors(seq):
@@ -108,6 +130,35 @@ def nearest_positive(cands, pos):
             if r > best_r[i]:
                 best_r[i], best_s[i] = r, p
     return best_s, best_r
+
+
+def per_protein(out):
+    """One row per source protein, with its candidate and discovery counts."""
+    # a fragment can be released from more than one precursor
+    ex = out.assign(source=out.sources.str.split(";")).explode("source")
+    disc = ex[ex.discovery]
+    n_cand, n_disc = ex.groupby("source").size(), disc.groupby("source").size()
+
+    # out arrives sorted by consensus then peptide_id and groupby preserves that order
+    # within a group, so the first row of each group is that protein's top scorer
+    top = disc.groupby("source", sort=False).first()
+
+    rows = []
+    for src, (group, protein) in SOURCE_LABELS.items():
+        c, d = int(n_cand.get(src, 0)), int(n_disc.get(src, 0))
+        rows.append({"group": group, "protein": protein, "source": src,
+                     "candidates": c, "discoveries": d,
+                     "rate_pct": round(100 * d / c, 1) if c else None,
+                     "top_discovery": top.sequence.get(src, ""),
+                     "top_score": round(top.consensus[src], 3) if d else None})
+
+    # the Total row counts each fragment once, so its rate is 412 of 3,596 rather than
+    # the 414 of 4,052 a reader would get by summing the column above it
+    n, k = len(out), int(out.discovery.sum())
+    rows.append({"group": "Total", "protein": "", "source": "", "candidates": n,
+                 "discoveries": k, "rate_pct": round(100 * k / n, 1),
+                 "top_discovery": "", "top_score": None})
+    return pd.DataFrame(rows)
 
 
 # --------------------------------------------------------------------------- #
@@ -162,6 +213,7 @@ def main():
     discovery.to_csv(OUT_DISCOVERY, index=False)
     shortlist = out[out["high_confidence"]].reset_index(drop=True)
     shortlist.to_csv(OUT_SHORTLIST, index=False)
+    per_protein(out).to_csv(OUT_PER_PROTEIN, index=False)
 
     # novelty is measured over the whole ranking rather than the discoveries alone,
     # so the score similarity correlation below has the full range to work with
@@ -197,13 +249,20 @@ def main():
     ]
     pd.DataFrame(stats, columns=["quantity", "value"]).to_csv(OUT_NOVELTY_SUM, index=False)
 
+    # the last three make the per-protein table's totals checkable, since a fragment
+    # from two precursors is counted against each and the columns overshoot the pool
+    ex = out.assign(source=out.sources.str.split(";")).explode("source")
+
     # how the pool narrows at each gate, which is the source of Figure 5's funnel
     funnel = [("n_candidates", len(seqs)),
               ("esm_above_0.5", int((esm_prob >= 0.5).sum())),
               ("xgb_above_0.5", int((xgb_prob >= 0.5).sum())),
               ("both_above_0.5", len(shortlist)),
               ("discoveries", len(discovery)),
-              ("discovery_threshold", DISCOVERY_THRESHOLD)]
+              ("discovery_threshold", DISCOVERY_THRESHOLD),
+              ("n_multi_source_fragments", int((out.sources.str.count(";") > 0).sum())),
+              ("per_protein_candidate_sum", len(ex)),
+              ("per_protein_discovery_sum", int(ex.discovery.sum()))]
     pd.DataFrame(funnel, columns=["quantity", "value"]).to_csv(OUT_SCORE_FUNNEL, index=False)
 
 
