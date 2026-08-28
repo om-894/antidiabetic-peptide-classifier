@@ -22,6 +22,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import shap
+from scipy.stats import pearsonr
 
 # the shap and xgboost stack emits deprecation noise that has nothing to do with the
 # attributions. It would bury the one line this script prints
@@ -75,12 +76,15 @@ def main():
             # sign of the relationship, as the beeswarm's colour axis showed it. positive
             # means a higher descriptor value pushes the prediction towards ADP. a feature
             # the model never split on has zero variance in its values, so it gets nan
-            direction = (float(np.corrcoef(Xte[:, j], sv[:, j])[0, 1])
-                         if sv[:, j].std() > 0 else float("nan"))
+            if sv[:, j].std() > 0:
+                direction, direction_p = pearsonr(Xte[:, j], sv[:, j])
+            else:
+                direction, direction_p = float("nan"), float("nan")
             rows.append({"model": tag, "feature": name,
-                         "mean_abs_shap": float(mean_abs[j]),
-                         "value_shap_corr": round(direction, 3),
-                         "descriptor_share_of_total": round(float(desc_share), 4)})
+                        "mean_abs_shap": float(mean_abs[j]),
+                        "value_shap_corr": round(float(direction), 3),
+                        "value_shap_corr_p": float(f"{direction_p:.3g}"),
+                        "descriptor_share_of_total": round(float(desc_share), 4)})
 
     imp = pd.DataFrame(rows)
     imp.to_csv(OUT_CSV, index=False)
