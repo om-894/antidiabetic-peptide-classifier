@@ -77,6 +77,7 @@ def main():
             # means a higher descriptor value pushes the prediction towards ADP. a feature
             # the model never split on has zero variance in its values, so it gets nan
             if sv[:, j].std() > 0:
+                # pearson r didnt end up being used
                 direction, direction_p = pearsonr(Xte[:, j], sv[:, j])
             else:
                 direction, direction_p = float("nan"), float("nan")
