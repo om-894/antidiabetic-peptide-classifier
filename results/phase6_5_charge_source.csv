@@ -20,3 +20,4 @@ screen_pct_cationic_all_candidates,33.3,3596
 screen_mean_charge_discoveries,-0.79,412
 screen_pct_cationic_discoveries,10.2,412
 screen_spearman_consensus_vs_charge,-0.3344,3596
+screen_spearman_p_consensus_vs_charge,1.17e-94,3596

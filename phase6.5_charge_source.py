@@ -95,22 +95,29 @@ def main():
          "value": round(roc_auc_score(fp.astype(int), hard.charge), 4), "n": len(hard)},
     ]
 
+
     # the same rule in the screen output. discoveries and non-discoveries come
     # from one pool, so a charge gap between them is the classifier's doing
     r = pd.read_csv(SCREEN, keep_default_na=False)
     r["charge"] = [peptides.Peptide(str(s)).charge(pH=7.4) for s in r.sequence]
     disc = r[r.discovery]
+
+    # the p is kept alongside the coefficient, so section 3.3 can cite both
+    rho, rho_p = spearmanr(r.consensus, r.charge)
+
     rows += [
         {"quantity": "screen_mean_charge_all_candidates",
-         "value": round(r.charge.mean(), 3), "n": len(r)},
+        "value": round(r.charge.mean(), 3), "n": len(r)},
         {"quantity": "screen_pct_cationic_all_candidates",
-         "value": round(100 * (r.charge > CATIONIC).mean(), 1), "n": len(r)},
+        "value": round(100 * (r.charge > CATIONIC).mean(), 1), "n": len(r)},
         {"quantity": "screen_mean_charge_discoveries",
-         "value": round(disc.charge.mean(), 3), "n": len(disc)},
+        "value": round(disc.charge.mean(), 3), "n": len(disc)},
         {"quantity": "screen_pct_cationic_discoveries",
-         "value": round(100 * (disc.charge > CATIONIC).mean(), 1), "n": len(disc)},
+        "value": round(100 * (disc.charge > CATIONIC).mean(), 1), "n": len(disc)},
         {"quantity": "screen_spearman_consensus_vs_charge",
-         "value": round(spearmanr(r.consensus, r.charge)[0], 4), "n": len(r)},
+        "value": round(rho, 4), "n": len(r)},
+        {"quantity": "screen_spearman_p_consensus_vs_charge",
+        "value": float(f"{rho_p:.3g}"), "n": len(r)},
     ]
 
     out = pd.DataFrame(rows)
