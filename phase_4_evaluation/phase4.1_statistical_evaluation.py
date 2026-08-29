@@ -11,13 +11,16 @@ paired tests valid.
   DeLong -> compares two AUCs, allowing for correlated ROC curves.
   McNemar -> compares two sets of threshold calls over the matched rows.
 
-Two pairs are tested, the stacked ensemble against its best single member and
-the dual-negative model against the ablation control. That is four tests, all
-corrected together with Holm-Bonferroni.
+Two pairs are tested here, the stacked ensemble against its best single member
+and the dual-negative model against ESM-2 / DoRA (Basith negatives). Phase 6.3
+tests a third pair, BertADP against the dual-negative model, on negatives only.
+That is five tests, all corrected together with Holm-Bonferroni, so this script
+reads the phase 6.3 result rather than leaving it corrected on its own.
 
 INPUTS  the npz files named in MODELS, each with y_test and a *_test key
+        results/phase6_3_benchmark_tests.csv, for the third pair's McNemar
 OUTPUTS  phase4_1_metrics_ci.csv (Table 7, also read by figures.ipynb)
-         phase4_1_pairwise_tests.csv (the two comparisons)
+         phase4_1_pairwise_tests.csv (the three comparisons)
 REQUIREMENTS  pip install MLstatkit statsmodels scikit-learn pandas numpy
 """
 
@@ -38,6 +41,11 @@ from MLstatkit import AUC2OR, Bootstrapping, Delong_test
 SEED = 42
 N_BOOT = 1000 # bootstrap resamples, the figure section 2.5 reports
 RESULTS_DIR = "results" # repo root, as in every other phase script
+
+# the third pair is tested in phase 6.3 because only that script loads the
+# BertADP predictions. its raw p is read back here so one correction covers all
+# five tests rather than four here and one there
+BENCH_TESTS = os.path.join(RESULTS_DIR, "phase6_3_benchmark_tests.csv")
 
 # figures.ipynb matches rows of the metrics CSV on these names, so they are load
 # bearing rather than labels. the three tuned variants never reach a table, they
@@ -115,6 +123,21 @@ def ece(y, p, bins=10):
 
 
 # --------------------------------------------------------------------------- #
+# BENCHMARK TEST
+# --------------------------------------------------------------------------- #
+
+def benchmark_mcnemar(path=BENCH_TESTS):
+    """The phase 6.3 McNemar as a raw p and its two discordant counts."""
+    # a missing file means phase 6.3 has not been run, which would silently drop the
+    # test from the family rather than fail, so it is an error instead
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"{path} not found, run phase6.3_hardneg_fpr.py first")
+
+    row = pd.read_csv(path).set_index("metric").loc["mcnemar_bertadp_vs_dual"]
+    return float(row["value"]), int(row["b_bert_right_ours_wrong"]), int(row["c_bert_wrong_ours_right"])
+
+
+# --------------------------------------------------------------------------- #
 # MAIN
 # --------------------------------------------------------------------------- #
 
@@ -168,27 +191,43 @@ def main():
 
     raw_p, rows = [], []
     for label, pa, pb in comparisons:
-        _, dp, ci_a, ci_b, auc_a, auc_b, _ = Delong_test(
+        # the first return value is the DeLong z. it is kept rather than discarded so
+        # the test statistic can be reported alongside the p-value
+        z, dp, ci_a, ci_b, auc_a, auc_b, _ = Delong_test(
             y, pa, pb, return_ci=True, return_auc=True, random_state=SEED)
         mp, b, c, odds = mcnemar(y, (pa > 0.5).astype(int), (pb > 0.5).astype(int))
         raw_p += [dp, mp]
-        rows.append((label, dp, auc_a, auc_b, ci_a, ci_b, mp, b, c, odds))
+        rows.append((label, z, dp, auc_a, auc_b, ci_a, ci_b, mp, b, c, odds))
 
-    # corrected across all four at once, since they are one family of questions.
+    # the benchmark pair joins the family here, so it is corrected with the other
+    # four rather than reported uncorrected in section 3.2
+    bench_p, bench_b, bench_c = benchmark_mcnemar()
+    raw_p.append(bench_p)
+
+    # corrected across all five at once, since they are one family of questions.
     # holm is step-down, so it stays more powerful than plain Bonferroni
     adj = multipletests(raw_p, method="holm")[1]
 
     # DeLong and McNemar write different columns, which pandas fills as blanks
     test_rows = []
-    for i, (label, dp, auc_a, auc_b, ci_a, ci_b, mp, b, c, odds) in enumerate(rows):
+    for i, (label, z, dp, auc_a, auc_b, ci_a, ci_b, mp, b, c, odds) in enumerate(rows):
         test_rows += [
             {"comparison": label, "test": "DeLong", "p_raw": dp, "p_holm": adj[2 * i],
+             # MLstatkit signs z against auc_b - auc_a, so the magnitude is stored and
+             # the direction is left to delta_auc
+             "z": round(abs(z), 3), "delta_auc": round(auc_a - auc_b, 4),
              "auc_a": round(auc_a, 4), "auc_b": round(auc_b, 4),
              "ci_a_lo": round(ci_a[0], 4), "ci_a_hi": round(ci_a[1], 4),
              "ci_b_lo": round(ci_b[0], 4), "ci_b_hi": round(ci_b[1], 4)},
             {"comparison": label, "test": "McNemar", "p_raw": mp, "p_holm": adj[2 * i + 1],
              "b": b, "c": c, "odds_ratio": round(odds, 3)},
         ]
+
+    # phase 6.3 owns the counts and the raw p, so only the corrected value is new
+    test_rows.append(
+        {"comparison": "BertADP vs dual-neg (benchmark)", "test": "McNemar",
+         "p_raw": bench_p, "p_holm": adj[4], "b": bench_b, "c": bench_c,
+         "odds_ratio": round(bench_b / bench_c, 3) if bench_c else np.inf})
 
     pd.DataFrame(ci_rows).to_csv(os.path.join(RESULTS_DIR, "phase4_1_metrics_ci.csv"), index=False)
     pd.DataFrame(test_rows).to_csv(os.path.join(RESULTS_DIR, "phase4_1_pairwise_tests.csv"), index=False)

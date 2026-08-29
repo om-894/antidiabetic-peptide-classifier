@@ -1,0 +1,4 @@
+group,n,mean,sd,pct_cationic
+Positives (ADP),873,-0.297,1.368,25.9
+Soft negatives (antimicrobial),598,3.447,2.614,90.0
+Hard negatives (proteome),283,0.005,1.736,37.8
