@@ -1,6 +1,6 @@
 # Viking HPC runbook
 
-Four steps ran on the University of York **Viking** cluster (SLURM): the
+Four steps ran on the University of York Viking cluster (SLURM): the
 ESM-2/DoRA fine-tune, its seed refits, the negative-class ablation and the
 screening pass. Everything else runs locally. Username `*****`, account
 `chem-data-2023`.
@@ -24,7 +24,7 @@ comment on `phase3.3_esm2_dora.sbatch`.
 - Log in: `ssh *****@viking.york.ac.uk`
 
 ## One-time environment setup
-Run on a **login node** — login nodes have internet, GPU compute nodes do not.
+Run on a login node. Login nodes have internet, GPU compute nodes do not.
 ```bash
 module purge
 module load Python/3.11.3-GCCcore-12.3.0
