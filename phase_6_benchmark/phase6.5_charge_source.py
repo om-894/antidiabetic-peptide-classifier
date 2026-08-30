@@ -13,6 +13,7 @@ correctly rejects are cationic, and in the screen output that follows from it.
 
 INPUTS  dataset_split.csv, esm2_dora_predictions.npz
         peptides.csv (the raw DBAASP export, before any filtering)
+        basith_negatives_pool.csv, dataset_split_basith.csv (phase 3.6)
         screening_ranked.csv (every candidate with its consensus score)
 OUTPUTS  phase6_5_charge_source.csv (one row per quantity, with the n behind it)
 REQUIREMENTS  pip install pandas numpy peptides scikit-learn scipy
@@ -35,6 +36,9 @@ SPLIT = "data/dataset_split.csv"
 ESM = "predictions/esm2_dora_predictions.npz"
 SCREEN = "screening/screening_ranked.csv"
 SOFT_CSV = "data/peptides.csv" # raw DBAASP export, before any filtering
+BASITH_DIR = "phase_3_models/phase3.6_negative_class_ablation"
+BASITH_POOL = f"{BASITH_DIR}/basith_negatives_pool.csv" # Layer-1 pool, the set BertADP saw
+BASITH_SPLIT = f"{BASITH_DIR}/dataset_split_basith.csv"
 OUT = "results/phase6_5_charge_source.csv"
 
 CATIONIC = 0.5 # net charge above this counts as cationic
@@ -82,6 +86,21 @@ def main():
         rows.append({"quantity": f"source_mean_charge_{name}",
                      "value": round(float(ch.mean()), 3), "n": len(ch)})
         rows.append({"quantity": f"source_pct_cationic_{name}",
+                     "value": round(100 * float((ch > CATIONIC).mean()), 1), "n": len(ch)})
+
+    # the negatives the published model was trained on. section 4.2 compares BertADP's
+    # charge rule against the pool Xie adopted, not against the 873 drawn from it here,
+    # so both are measured. phase 3.6.1 deduplicated the pool and dropped non-standard
+    # residues when it wrote the file, so no filtering is repeated
+    pool = pd.read_csv(BASITH_POOL, keep_default_na=False)
+    drawn = pd.read_csv(BASITH_SPLIT, keep_default_na=False)
+    drawn = drawn[(drawn.Split == "train") & (drawn.Label == 0)]
+    for kind, name, ss in [("source", "basith_layer1_pool", pool.Sequence),
+                           ("train", "basith_negatives", drawn.Sequence)]:
+        ch = np.array(charges(ss))
+        rows.append({"quantity": f"{kind}_mean_charge_{name}",
+                     "value": round(float(ch.mean()), 3), "n": len(ch)})
+        rows.append({"quantity": f"{kind}_pct_cationic_{name}",
                      "value": round(100 * float((ch > CATIONIC).mean()), 1), "n": len(ch)})
 
     # can charge alone tell the training classes apart. label 1 = is a negative, so an AUC

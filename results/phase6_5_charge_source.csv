@@ -9,6 +9,10 @@ source_mean_charge_dbaasp_export,3.827,1874
 source_pct_cationic_dbaasp_export,91.3,1874
 source_mean_charge_dbaasp_export_standard_aa,3.875,1666
 source_pct_cationic_dbaasp_export_standard_aa,92.1,1666
+source_mean_charge_basith_layer1_pool,1.14,1397
+source_pct_cationic_basith_layer1_pool,50.3,1397
+train_mean_charge_basith_negatives,1.042,873
+train_pct_cationic_basith_negatives,50.3,873
 train_charge_auc_positives_vs_all_negatives,0.8041,1754
 train_charge_auc_positives_vs_soft_only,0.9118,1471
 train_charge_auc_positives_vs_hard_only,0.5766,1156
