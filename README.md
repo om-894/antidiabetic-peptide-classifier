@@ -1,4 +1,3 @@
-
 # Hybrid deep learning and PLM embeddings for anti-diabetic peptide discovery
 
 MSc Data Science project, Oliver McQuillan, 2025/26.
@@ -41,14 +40,14 @@ quotes. `figures/` exported figures.
 
 ## Declaration of AI use in code
 
-Generative AI was used in producing approximately 10% of the
-code in this repository. Following the module guidance, this is a general
-account rather than a line-by-line one.
+Generative AI was used in producing approximately 10% of the code in this
+repository. Following the module guidance, this is a general account rather
+than a line-by-line one.
 
-It was used to draft certain functions and to solve
-specific problems within the project. These include improving the efficiency of individual
-functions and working around issues I could not resolve from documentation or
-Stack Overflow. Claude was the tool used.
+It was used to draft certain functions and to solve specific problems within
+the project. These include improving the efficiency of individual functions
+and working around issues I could not resolve from documentation or Stack
+Overflow. Claude was the tool used.
 
 All code submitted here is my responsibility and I have read and understood
 every part of it.
