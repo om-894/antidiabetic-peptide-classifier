@@ -7,18 +7,14 @@ screening pass. Everything else runs locally. Username `*****`, account
 
 ## What ran where
 
-Phase 2.1 has no sbatch and was run on 27 June, two days before the first Viking
-job. Frozen embedding extraction stayed local. Four steps did not:
+Phase 2.1 has no sbatch and was ran locally. Frozen embedding extraction stayed local. Four steps did not:
 
 - **Phase 3.3, main fine-tune.** Six sequential fits: five OOF folds plus a final
   all-train fit, on a 650M backbone.
-- **Phase 3.3, seed refits.** Five single fine-tunes. `SEED` became an
-  environment variable on 8 July (`aae8d87`).
+- **Phase 3.3, seed refits.** Five single fine-tunes.
 - **Phase 3.6.3, ablation.** One fine-tune.
 - **Phase 5.2, screening.** Two forward passes of the 650M model over 3,596
-  candidates, once frozen and once with the adapter. Moved here from local; the
-  commit that added `DEVICE` as an environment variable (`306b4ab`, 10 July)
-  records why: "I was running on mac but too slow, so now can run on viking."
+  candidates, once frozen and once with the adapter.
 
 Every sbatch requests `--partition=gpu`. `gpuplus` (H100) appears only in a
 comment on `phase3.3_esm2_dora.sbatch`.
@@ -141,24 +137,3 @@ Retrieve to **Mac**:
 ```bash
 scp *****@viking.york.ac.uk:~/adp/screening/screening_esm2.npz screening/
 ```
-
-## Notes
-- **GPU nodes have no internet** — the sbatch scripts set `TRANSFORMERS_OFFLINE=1`
-  and `HF_HUB_OFFLINE=1` and load the pre-cached model.
-- `--account=chem-data-2023` is **mandatory** or the job will not run.
-- **`esm_oof` is all-zero in the step 2 and step 3 outputs**, which set
-  `SKIP_OOF=1`. Only `esm_test` is meaningful there. `esm2_dora_predictions.npz`
-  is the only file with usable OOF probabilities, and is what phases 3.4 and 5.0
-  read.
-- The ablation npz holds 1,746 train rows against 1,754 for the main run, the
-  Basith negatives being 1:1 against the 873 training positives. Test rows are
-  identical in both, which `phase3.6.4_ablation_evaluate.py` asserts.
-- **Path layout.** Every sbatch expects the flat `~/adp/` tree, not the repo's
-  phase folders. So `dataset_split_basith.csv` goes to `~/adp/data/` even though
-  phase 3.6.2 writes it into the ablation folder locally.
-- The seed sbatch stops if `SEED` is unset. That guard was added after the 8 July
-  runs.
-- Path check before using the GPU: `TEST_RUN=1 sbatch phase3.3_esm2_dora.sbatch`
-  runs 1 fold, 1 epoch, 64 rows.
-- Monitor with `squeue -u *****`; the job emails on completion.
-- No job logs were retrieved, so job IDs and wall times are not recorded here.
