@@ -1,0 +1,34 @@
+candidates 3596, seeds [42, 43, 44, 45, 46], threshold 0.9
+
+shortlist size per seed:
+  seed 42: 412
+  seed 43: 277
+  seed 44: 176
+  seed 45: 238
+  seed 46: 153
+  published (seed 42 consensus): 412
+
+selection frequency across the five seeds:
+  selected by 5 of 5: 111
+  selected by 4 of 5: 54
+  selected by 3 of 5: 61
+  selected by 2 of 5: 77
+  selected by 1 of 5: 148
+  never selected: 3145
+
+intersection across all five seeds: 111 candidates
+mean-ensemble shortlist: 210 candidates
+
+the published 412 against the five-seed view:
+  selected by all five: 111 (26.9%)
+  selected by three or more: 217
+  selected by seed 42 alone: 123
+  median selection frequency: 3 of 5
+
+tiered leads and known actives:
+  Tier 1 (n = 216): all five 44, three or more 91, median 2 of 5
+  Tier 2 (n = 27): all five 7, three or more 16, median 3 of 5
+  FVAPFPEVF  selected by 5 of 5  per-seed consensus: 0.997  0.980  0.975  0.989  0.963
+  GPFPSIL    selected by 5 of 5  per-seed consensus: 0.998  0.961  0.966  0.968  0.948
+  LPGF       selected by 5 of 5  per-seed consensus: 0.996  0.922  0.910  0.908  0.954
+  IPAVF      selected by 4 of 5  per-seed consensus: 0.988  0.939  0.949  0.652  0.942
