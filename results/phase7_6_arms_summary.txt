@@ -1,0 +1,8 @@
+training positives: 873, mean length 13.5, mean charge -0.30
+
+arm A:  881 train negatives, mean length  13.6, mean charge +2.34, soft share 0.679, {'soft': 598, 'hard': 283}
+arm B:  873 train negatives, mean length  26.4, mean charge +0.96, soft share 0.000, {'basith': 873}
+arm C:  303 train negatives, mean length  17.7, mean charge +2.52, soft share 0.000, {'basith': 303}
+arm D:  611 train negatives, mean length  14.8, mean charge +3.45, soft share 1.000, {'soft': 611}
+arm E:  873 train negatives, mean length  13.5, mean charge -0.05, soft share 0.000, {'hard': 873}
+arm F:  873 train negatives, mean length  13.5, mean charge -0.29, soft share 0.226, {'hard': 676, 'soft': 197}

@@ -1,0 +1,18 @@
+ESM-2/DoRA fine-tune, five seed refits:
+  seed 42: 0.8769
+  seed 43: 0.8072
+  seed 44: 0.8365
+  seed 45: 0.8538
+  seed 46: 0.8338
+  mean 0.8416, SD 0.0231, range 0.8072 to 0.8769
+  the Table 2 point estimate 0.8769 is the best of the five, +0.0352 above the mean
+
+frozen ESM-2 + descriptors, logistic regression, five seeds:
+  0.8453  0.8453  0.8453  0.8453  0.8453
+  mean 0.8453, SD 0.0000, range 0.0000
+
+frozen ESM-2 + descriptors, XGBoost, five seeds:
+  0.8572  0.8598  0.8635  0.8550  0.8619
+  mean 0.8595, SD 0.0031, range 0.0085
+
+spread ratio, fine-tune range over XGBoost range: see the two range figures above

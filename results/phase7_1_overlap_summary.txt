@@ -1,0 +1,20 @@
+test rows                        178
+exact matches in train           0
+substring relationship           67 (37.6%)
+  shuffled null mean             37.2 (20.9%), SD 4.0
+  null range                     26 to 49
+  empirical P                    0.0000 (200 shuffles, seed 42)
+near duplicates >= 0.80        41 (23.0%)
+  of which positives             24
+  median length of those         9
+  below 11 residues              35 of 130 short test rows
+  11 residues or more            6 of 48 long test rows
+mean nearest identity            0.631
+  short rows (< 11)              0.665
+  long rows (>= 11)              0.541
+
+AUC with near-duplicate test rows removed (no refit):
+ESM-2/DoRA               full 0.8769  near-dup removed 0.8311  delta +0.0458
+XGBoost                  full 0.8572  near-dup removed 0.8146  delta +0.0426
+Random Forest            full 0.8302  near-dup removed 0.7786  delta +0.0517
+consensus (ESM-2 + XGB)  full 0.8786  near-dup removed 0.8355  delta +0.0431

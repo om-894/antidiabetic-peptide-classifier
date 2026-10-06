@@ -1,0 +1,9 @@
+arm,negatives,n_train_pos,n_train_neg,mean_neg_length,mean_neg_charge,auc,auc_sd,mcc,fpr_hard_pct,fpr_hard_sd,fpr_soft_pct,charge_separation_auc
+A,"dual-negative, as published",873,881,13.6,2.34,0.8619,0.0037,0.5817,45.1,2.8,5.0,0.8041
+B,"Basith pool, length free",873,873,26.4,0.96,0.682,0.0055,0.3862,81.6,1.4,23.5,0.5924
+C,"Basith pool, length matched",873,303,17.7,2.52,0.7104,0.005,0.4462,91.8,1.0,23.2,0.7536
+C-bal,"Basith, length matched, balanced",303,303,17.7,2.52,0.7082,0.0066,0.365,79.6,2.2,17.2,0.7446
+D,"DBAASP only, length matched",873,611,14.8,3.45,0.7983,0.0034,0.538,82.9,2.0,9.5,0.9154
+D-bal,"DBAASP only, length matched, balanced",611,611,14.8,3.45,0.796,0.004,0.5281,78.0,2.1,9.0,0.9142
+E,"proteome only, length matched",873,873,13.5,-0.05,0.826,0.0091,0.5037,29.1,2.3,10.5,0.5549
+F,length and charge matched,873,873,13.5,-0.29,0.8442,0.0069,0.5552,33.1,2.5,6.5,0.5067

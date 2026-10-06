@@ -1,0 +1,10 @@
+XGBoost on the fused vector, shared 178-row test set (93 positives, 40 soft negatives, 45 hard)
+
+A      dual-negative, as published        pos=873 neg= 881  AUC 0.862+-0.004  MCC 0.582  FPR hard  45.1+- 2.8%  FPR soft   5.0%  charge sep 0.804
+B      Basith pool, length free           pos=873 neg= 873  AUC 0.682+-0.005  MCC 0.386  FPR hard  81.6+- 1.4%  FPR soft  23.5%  charge sep 0.592
+C      Basith pool, length matched        pos=873 neg= 303  AUC 0.710+-0.005  MCC 0.446  FPR hard  91.8+- 1.0%  FPR soft  23.2%  charge sep 0.754
+C-bal  Basith, length matched, balanced   pos=303 neg= 303  AUC 0.708+-0.007  MCC 0.365  FPR hard  79.6+- 2.2%  FPR soft  17.2%  charge sep 0.745
+D      DBAASP only, length matched        pos=873 neg= 611  AUC 0.798+-0.003  MCC 0.538  FPR hard  82.9+- 2.0%  FPR soft   9.5%  charge sep 0.915
+D-bal  DBAASP only, length matched, balanced pos=611 neg= 611  AUC 0.796+-0.004  MCC 0.528  FPR hard  78.0+- 2.1%  FPR soft   9.0%  charge sep 0.914
+E      proteome only, length matched      pos=873 neg= 873  AUC 0.826+-0.009  MCC 0.504  FPR hard  29.1+- 2.3%  FPR soft  10.5%  charge sep 0.555
+F      length and charge matched          pos=873 neg= 873  AUC 0.844+-0.007  MCC 0.555  FPR hard  33.1+- 2.5%  FPR soft   6.5%  charge sep 0.507

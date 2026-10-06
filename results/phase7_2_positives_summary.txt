@@ -1,0 +1,34 @@
+containment with the shorter covering >= 50% of the longer:
+  positives                        966 sequences, 577 families, largest 56, ESS 0.60
+  negatives (control)              966 sequences, 861 families, largest 10, ESS 0.89
+
+plain containment, no coverage floor, for comparison:
+  positives                        966 sequences, 427 families, largest 242, ESS 0.44
+  negatives (control)              966 sequences, 621 families, largest 287, ESS 0.64
+
+families straddling the published split  21, carrying 226 positives (23.4%)
+
+preproinsulin fragments among positives  142 of 966 (14.7%)
+preproinsulin fragments among negatives  2 of 966
+
+ten largest positive families:
+  n= 56  30 aa  insulin spans products  splits test/train
+         AAAFVNQHLCGSHLVEALYLVCGERGFFYT
+  n= 55  31 aa  insulin C-peptide  splits test/train
+         EAEDLQVGQVELGGGPGAGSLQPLALEGSLQ
+  n= 32  24 aa  insulin signal peptide  splits test/train
+         MALWMRLLPLLALLALWGPDPAAA
+  n= 20  30 aa  unattributed  splits train
+         LVYPFPGPIPNSLPQNIPPLTQTPVVVPPF
+  n= 19  41 aa  unattributed  splits train
+         VSYQPLGDKVNFFRMVISNPAATHQDIDFLIEEIERLGQDL
+  n= 15  33 aa  unattributed  splits test/train
+         NMYAMMIARFKMFPEVKEKGMAALPRLIAFTSE
+  n= 12  20 aa  unattributed  splits train
+         PVIKARMMEYGTTMVSYQPL
+  n= 12  24 aa  unattributed  splits train
+         EKGMAALPRLIAFTSEHSHFSLKK
+  n= 10  25 aa  unattributed  splits train
+         DFWQMVWESGCTVIVMLTPLVEDGV
+  n=  9  18 aa  unattributed  splits test/train
+         AMAPKHKEMPFPKYPVEP

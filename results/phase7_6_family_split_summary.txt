@@ -1,0 +1,19 @@
+one shared family-aware test set, every arm scored on it
+test 290 rows: 145 positives, 96 soft negatives, 49 hard negatives
+
+arm A: neg= 757  AUC 0.850+-0.008  FPR hard  59.8%  FPR soft  22.2%
+arm B: neg= 873  AUC 0.776+-0.004  FPR hard  80.4%  FPR soft  28.8%
+arm C: neg= 303  AUC 0.805+-0.003  FPR hard  88.4%  FPR soft  29.6%
+arm D: neg= 547  AUC 0.853+-0.002  FPR hard  88.6%  FPR soft  25.2%
+arm E: neg= 873  AUC 0.795+-0.008  FPR hard  28.0%  FPR soft  10.9%
+arm F: neg= 847  AUC 0.778+-0.014  FPR hard  36.3%  FPR soft  20.4%
+
+negative-class effect, published split vs family-aware split:
+  A vs B, composition and length
+    AUC gap   published +0.180      family-aware +0.074
+    FPR gap   published +36.5 pts   family-aware +20.6 pts
+  F vs B, matched vs published
+    AUC gap   published +0.162      family-aware +0.003
+    FPR gap   published +48.5 pts   family-aware +44.1 pts
+
+test sets differ between the two splits, so only within-split gaps are comparable.

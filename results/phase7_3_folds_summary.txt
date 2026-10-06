@@ -1,0 +1,16 @@
+training rows                    1754
+families (containment, >= 50%)   1304
+
+leakage under the published StratifiedKFold scheme:
+  fold 0:  112 of  351 validation rows have a family relative in that fold's training rows (31.9%)
+  fold 1:  111 of  351 validation rows have a family relative in that fold's training rows (31.6%)
+  fold 2:  104 of  351 validation rows have a family relative in that fold's training rows (29.6%)
+  fold 3:  110 of  351 validation rows have a family relative in that fold's training rows (31.3%)
+  fold 4:  103 of  350 validation rows have a family relative in that fold's training rows (29.4%)
+  overall: 540 of 1754 (30.8%)
+  same count under StratifiedGroupKFold: 0 (zero by construction)
+
+XGBoost out-of-fold readout:
+  stratified folds   AUC 0.9161   swept threshold 0.93 (keeps 541, precision 0.900)
+  grouped folds      AUC 0.8961   swept threshold 0.97 (keeps 242, precision 0.905)
+  AUC inflation from the fold scheme: +0.0201
