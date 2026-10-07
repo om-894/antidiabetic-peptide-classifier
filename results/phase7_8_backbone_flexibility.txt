@@ -1,0 +1,15 @@
+Backbone movement during semi-flexible refinement.
+RMS change in phi/psi from the nearest of the three submitted conformers,
+in degrees, over every model in each run's summary archive.
+
+FVAPFPEVF (Tier-1 lead)          n= 40  closest   13.2  median   23.2  furthest   41.1
+CAND3348 (Tier-2 lead)           n= 24  closest    9.2  median   17.6  furthest   22.0
+CAND3554 (Tier-2 lead)           n= 20  closest    7.0  median   13.6  furthest   27.9
+IPI (Diprotin A, +ve control)    n= 28  closest    7.6  median   21.2  furthest   51.4
+IPAVF (+ve control)              n= 40  closest    9.3  median   18.8  furthest   38.9
+hard negative 1                  n= 20  closest   10.8  median   22.1  furthest   38.5
+hard negative 2                  n= 40  closest   13.0  median   35.9  furthest   58.7
+hard negative 3                  n= 40  closest   14.6  median   38.7  furthest   60.3
+
+smallest change anywhere in the panel: 7.0 degrees
+A pose held at its starting geometry would read near zero.

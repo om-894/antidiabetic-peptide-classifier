@@ -17,6 +17,7 @@ all untouched; this phase measures them rather than replacing them.
 | `phase7.6_ablation/` | Can negative-class composition be separated from length and charge? | `results/phase7_6_*` |
 | `phase5.8_seed_screen.py` | What does the screen return under each of the five ESM-2 seeds? | `screening/screening_esm2_seeds.npz` |
 | `phase7.7_seed_stability.py` | How much of the shortlist survives a change of seed? | `results/phase7_6_seed_stability.*` |
+| `phase7.8_backbone_flexibility.py` | Did the peptide backbone actually move during HADDOCK's semi-flexible refinement? | `results/phase7_8_backbone_flexibility.*` |
 
 `phase5.8_seed_screen.py` keeps its phase-5 number because it is a screening
 pass rather than an audit, and because the Viking staging commands already refer
@@ -35,7 +36,8 @@ python phase7.6_ablation/phase7.6.4_family_split.py # needs 7.6.3's results file
 ```
 
 The seed screen runs on Viking (see `viking_runbook.md` for the environment) and
-`phase7.7_seed_stability.py` consumes its output locally.
+`phase7.7_seed_stability.py` consumes its output locally. `phase7.8` reads the
+summary archives already in `docking/haddock_runs/` and needs nothing fetched.
 
 ## Two things that will bite a rerun
 

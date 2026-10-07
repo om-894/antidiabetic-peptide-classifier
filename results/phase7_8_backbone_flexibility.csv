@@ -1,0 +1,9 @@
+peptide,n_models,min_deg,median_deg,max_deg
+FVAPFPEVF (Tier-1 lead),40,13.2,23.2,41.1
+CAND3348 (Tier-2 lead),24,9.2,17.6,22.0
+CAND3554 (Tier-2 lead),20,7.0,13.6,27.9
+"IPI (Diprotin A, +ve control)",28,7.6,21.2,51.4
+IPAVF (+ve control),40,9.3,18.8,38.9
+hard negative 1,20,10.8,22.1,38.5
+hard negative 2,40,13.0,35.9,58.7
+hard negative 3,40,14.6,38.7,60.3
