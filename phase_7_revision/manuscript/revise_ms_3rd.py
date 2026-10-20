@@ -136,9 +136,11 @@ REPLACE = {
      "of this dataset at all. The partition should therefore not be described as "
      "free of all train-test relationships, and the next paragraph measures the "
      "ones it leaves. Nothing was deleted for redundancy: a conventional 40% "
-     "reduction would remove a large minority of the 1,932 sequences, many "
-     "positives being overlapping insulin-derived fragments, and near-duplicates "
-     "inside the training set are useful hard cases."),
+     "reduction removes most of the dataset, many positives being overlapping "
+     "insulin-derived fragments, while near-duplicates "
+     "inside the training set are useful hard cases. Applied to the 1,062 "
+     "sequences long enough to cluster, a conventional 40% reduction would "
+     "remove 782 of them."),
 
 # --- 2.1 overlap audit: name the two definitions (his point 2) -------------
 21: ("Because clustering does not reach",
@@ -992,8 +994,10 @@ STYLE = [
   "not on digestion fragments, so it carries no claim"),
  ("component energies are in kcal/mol, and buried surface area is omitted",
   "component energies are in kcal/mol, while buried surface area is omitted"),
- ("describing where that score came from, and it is not a physical measurement",
-  "describing where that score came from rather than measuring the physical"),
+ ("describing where that score came from, and it is not a physical measurement "
+  "of the electrostatic contribution to binding.",
+  "describing where that score came from rather than measuring the physical "
+  "electrostatic contribution to binding."),
  ("model shows none at 0.431, and length itself carries no signal",
   "model shows none at 0.431, while length itself carries no signal"),
  ("each is a different draw of sequences, and length, charge",

@@ -94,6 +94,12 @@ FIX = [
  ("two positive controls and three hard negatives from the held-out test set",
   "two reference inhibitors and three hard negatives from the held-out test set"),
 
+ ("Conventional 40% reduction would remove 782 of 1,932, since many ADPs are "
+  "overlapping insulin-derived fragments",
+  "Conventional 40% reduction would remove 782 of the 1,062 sequences long "
+  "enough to cluster, and most of the dataset if applied to all 1,932, since "
+  "many positives are overlapping insulin-derived fragments"),
+
  # Figure S5: calibration is a benchmark property, not a screen hit rate
  ("The consensus score is calibrated closely enough for the 0.90 threshold to "
   "carry an expected hit rate",

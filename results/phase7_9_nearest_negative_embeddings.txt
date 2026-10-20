@@ -1,0 +1,7 @@
+nearest-negative control on the 1,280-d embeddings alone
+  positives                     966
+  negatives                     966 (328 hard, 638 soft)
+  nearest negative is hard      725 (75.1%)
+  expected from class sizes     34.0%
+  the fused 1,287-d figure is 78.8%, so the seven descriptors are
+  not what produces the effect

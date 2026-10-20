@@ -273,7 +273,7 @@ def submission_note():
             "claims in all. The large majority verified exactly, including all of "
             "Tables 4, 5 and S14, every statistical test, the calibration chain "
             "and all twenty per-seed consensus values. Six discrepancies were "
-            "found and corrected:", space=8)
+            "found and corrected, with a seventh below:", space=8)
     for h, t in [
         ("Basith pool cap", "Section 2.3 and the Table 5 caption stated that the "
          "pool holds nothing below 9 residues while 45% of positives are shorter. "
@@ -311,14 +311,19 @@ def submission_note():
             "and the revision analyses sit under phase_7_revision with their "
             "outputs in results.", space=8)
 
-    para(d, "Three claim sets have no deposited source file and are flagged for "
-            "your judgement rather than changed: the baseline Gini importances "
-            "(25.4%, 39.0%, 0.143 and 0.111) in Section 3.1 and the Figure S4 "
-            "caption, the 75.1% embeddings-only nearest-negative control in "
-            "Section 2.1, and the figure of 782 sequences a conventional 40% "
-            "reduction would remove. The first of these carries an argument in "
-            "Section 3.1. Each is either recomputable and depositable before "
-            "submission or should be softened.", space=8)
+    para(d, "Three claim sets had no deposited source file when the audit was "
+            "run. All three have since been recomputed and deposited, so every "
+            "quantitative statement in the paper now traces to a file. The "
+            "baseline Gini importances were already inside "
+            "predictions/aac_baseline_predictions.npz and are now also a table "
+            "(results/phase7_9_aac_gini.csv); they verify exactly at 25.4%, "
+            "39.0%, 0.143 and 0.111. The 75.1% embeddings-only nearest-negative "
+            "control was recomputed and verifies exactly. The third turned up a "
+            "further error: the figure of 782 sequences removed by a "
+            "conventional 40% reduction is the count over the 1,062 sequences "
+            "long enough to cluster, not over all 1,932, which would lose most "
+            "of the dataset. Section 2.1 and Table S1 now state the population "
+            "the figure belongs to.", space=8)
 
     para(d, "Submission requirements", bold=True, size=12, space=8)
     para(d, "A Table of Contents graphic has been produced and placed on the last "
