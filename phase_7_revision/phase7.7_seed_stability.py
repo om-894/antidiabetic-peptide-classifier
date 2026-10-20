@@ -66,8 +66,11 @@ def main():
         "xgb_prob": xgb,
         "published_discovery": published,
         "n_seeds_selected": freq,
-        "consensus_mean": cons.mean(0).round(4),
-        "consensus_sd": cons.std(0).round(4),
+        # six places, not four. one candidate sits at 0.899963, which rounds to
+        # 0.9000 at four places and so flips the >= 0.90 test for anyone
+        # recounting from this file rather than from the probabilities
+        "consensus_mean": cons.mean(0).round(6),
+        "consensus_sd": cons.std(0).round(6),
     })
     for i, s in enumerate(seeds):
         out[f"consensus_seed{s}"] = cons[i].round(4)

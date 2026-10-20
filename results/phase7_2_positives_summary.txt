@@ -8,8 +8,8 @@ plain containment, no coverage floor, for comparison:
 
 families straddling the published split  21, carrying 226 positives (23.4%)
 
-preproinsulin fragments among positives  142 of 966 (14.7%)
-preproinsulin fragments among negatives  2 of 966
+preproinsulin fragments (>= 4 aa) among positives  141 of 966 (14.6%)
+preproinsulin fragments (>= 4 aa) among negatives  0 of 966
 
 ten largest positive families:
   n= 56  30 aa  insulin spans products  splits test/train

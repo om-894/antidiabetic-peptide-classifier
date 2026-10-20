@@ -31,6 +31,12 @@ os.makedirs(WORK, exist_ok=True)
 
 COVER = 0.50
 
+# shortest match counted as a preproinsulin fragment. below four residues a
+# sequence lands inside the precursor by chance rather than by ancestry: at any
+# length the positives give 142 and the negatives 2, and those two are the
+# dipeptide FF and the tripeptide ALE, which are not insulin fragments
+PRE_MIN_LEN = 4
+
 # human preproinsulin P01308, used only to name the largest families. the four
 # mature products are contiguous slices of it, so a family representative that
 # is a substring of this string can be attributed without a database lookup
@@ -79,9 +85,14 @@ def families(seqs, cover):
     return [u.find(i) for i in range(len(seqs))]
 
 
+def is_pre_fragment(seq):
+    """Is this a preproinsulin fragment long enough not to match by chance?"""
+    return len(seq) >= PRE_MIN_LEN and seq in PREPROINSULIN
+
+
 def region_of(seq):
     """Which mature insulin product a sequence falls in, or empty."""
-    if seq not in PREPROINSULIN:
+    if not is_pre_fragment(seq):
         return ""
     for name, region in REGIONS:
         if seq in region:
@@ -125,17 +136,18 @@ def main():
     straddle = byfam[byfam > 1].index
     n_straddle_seqs = int(pos.family.isin(straddle).sum())
 
-    in_pre = pos.Sequence.map(lambda s: s in PREPROINSULIN)
-    neg_in_pre = neg.Sequence.map(lambda s: s in PREPROINSULIN)
+    in_pre = pos.Sequence.map(is_pre_fragment)
+    neg_in_pre = neg.Sequence.map(is_pre_fragment)
 
     lines += [
         "",
         f"families straddling the published split  {len(straddle)}, "
         f"carrying {n_straddle_seqs} positives ({100 * n_straddle_seqs / len(pos):.1f}%)",
         "",
-        f"preproinsulin fragments among positives  {int(in_pre.sum())} of {len(pos)} "
-        f"({100 * in_pre.mean():.1f}%)",
-        f"preproinsulin fragments among negatives  {int(neg_in_pre.sum())} of {len(neg)}",
+        f"preproinsulin fragments (>= {PRE_MIN_LEN} aa) among positives  "
+        f"{int(in_pre.sum())} of {len(pos)} ({100 * in_pre.mean():.1f}%)",
+        f"preproinsulin fragments (>= {PRE_MIN_LEN} aa) among negatives  "
+        f"{int(neg_in_pre.sum())} of {len(neg)}",
         "",
         "ten largest positive families:",
     ]
