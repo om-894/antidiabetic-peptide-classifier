@@ -326,18 +326,35 @@ def submission_note():
             "the figure belongs to.", space=8)
 
     para(d, "Submission requirements", bold=True, size=12, space=8)
-    para(d, "A Table of Contents graphic has been produced and placed on the last "
-            "page of the manuscript, labelled “For Table of Contents Only”, with a "
-            "separate 300 dpi TIF for upload. It is original artwork, reuses no "
-            "manuscript figure, shows no specific results, and measures 3.25 by "
-            "1.75 inches with sans serif text at 6.5 pt, within the ACS "
-            "specification. The abstract runs to 262 words and should be checked "
-            "against the journal's current limit. The Supporting Information DOI "
-            "remains a placeholder, which is correct until the publisher assigns "
-            "it at proof.", space=8)
-    gap(d, "Outstanding: your email address for the corresponding-author block, "
-           "and your updated affiliation. These are the only items still missing "
-           "from the submission package.")
+    para(d, "A Table of Contents graphic has been produced and placed on the "
+            "last page of the manuscript, labelled \u201cFor Table of Contents "
+            "Only\u201d, with a separate 300 dpi TIF for upload. It is original "
+            "artwork, reuses no manuscript figure, shows no specific results and "
+            "measures 3.25 by 1.75 inches with sans serif text at 6.5 pt, within "
+            "the ACS specification.", space=8)
+
+    para(d, "The JCIM author guide has now been checked directly. It asks for an "
+            "abstract of three to four sentences; the abstract was 262 words "
+            "across eleven sentences and has been rewritten to four sentences "
+            "and 160 words. The 75-word limit elsewhere in the guide applies to "
+            "Letters rather than Articles. The title is ten words, within the "
+            "preferred twelve. The Supporting Information description is a "
+            "nonsentence list ending in the file extension that sits before the "
+            "Acknowledgment and References, as required. A Data Availability "
+            "Statement is present, which the journal requires under ACS Research "
+            "Data Policy Level 2. Use of an AI tool is now disclosed in the "
+            "Acknowledgment, as ACS requires for text or image generation.",
+         space=8)
+
+    para(d, "The corresponding-author block now carries the email address and "
+            "updated affiliation supplied on 23 October. The clean manuscript, "
+            "Supporting Information, cover letter and this note contain no "
+            "tracked changes, no deleted wording and no comments; an orphaned "
+            "empty comments part inherited from an earlier draft has been "
+            "removed from the Supporting Information. The only remaining "
+            "placeholder is the Supporting Information DOI, which the publisher "
+            "assigns at proof.", space=8)
+
     return d
 
 

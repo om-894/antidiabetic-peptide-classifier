@@ -18,6 +18,7 @@ OUTPUTS  ADP_supporting_information_3rd_draft.docx
 """
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -112,6 +113,36 @@ FIX = [
 ]
 
 
+def strip_empty_comments(work):
+    """Drop an orphaned comments part if it holds no actual comments.
+
+    The document carries a comments.xml with no <w:comment> in it, inherited
+    from whatever produced the first draft. It is harmless, but a submission
+    should not ship a part named comments at all, so it goes along with its
+    content-type override and its relationship.
+    """
+    doc = os.path.join(work, "word", "comments.xml")
+    if not os.path.exists(doc):
+        return False
+    if re.search(r"<w:comment[ >]", open(doc, encoding="utf-8").read()):
+        return False # real comments, leave well alone
+
+    for p in (doc, os.path.join(work, "word", "_rels", "comments.xml.rels")):
+        if os.path.exists(p):
+            os.remove(p)
+
+    ct = os.path.join(work, "[Content_Types].xml")
+    x = open(ct, encoding="utf-8").read()
+    x = re.sub(r'<Override PartName="/word/comments\.xml"[^>]*/>', "", x)
+    open(ct, "w", encoding="utf-8").write(x)
+
+    rels = os.path.join(work, "word", "_rels", "document.xml.rels")
+    x = open(rels, encoding="utf-8").read()
+    x = re.sub(r'<Relationship[^>]*Target="comments\.xml"[^>]*/>', "", x)
+    open(rels, "w", encoding="utf-8").write(x)
+    return True
+
+
 def main():
     src = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser(
         "~/Downloads/ADP_supporting_information_2nd_draft.docx")
@@ -139,6 +170,10 @@ def main():
         applied += n
 
     open(doc, "w", encoding="utf-8").write(x)
+
+    if strip_empty_comments(work):
+        print("removed an orphaned, empty comments part")
+
     out = os.path.join(out_dir, "ADP_supporting_information_3rd_draft.docx")
     if os.path.exists(out):
         os.remove(out)

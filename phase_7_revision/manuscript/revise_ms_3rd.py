@@ -69,32 +69,22 @@ REPLACE = {
 
 # --- Abstract: scoped claims, prioritisation language, curated positives ----
 6: ("ABSTRACT: Classifiers for anti-diabetic",
-    "ABSTRACT: Classifiers for anti-diabetic peptides (ADPs) report high benchmark "
-    "accuracy yet misclassify most of the proteome fragments a real screen "
-    "returns. Holding the positives, hyperparameters and test set fixed, we "
-    "varied the negative class alone. A dual-negative set of antimicrobial "
-    "peptides plus GO-filtered Swiss-Prot fragments, length-matched against 966 "
-    "curated positive ADP sequences, cut the false-positive rate on held-out "
-    "proteome fragments from 93.3% to 46.7%. Across the four architectures "
-    "evaluated, none separated from the others: a DoRA "
-    "fine-tuned ESM-2 650M model and a 20-feature composition baseline bracketed "
-    "the same AUC interval at 0.877 and 0.854. Net charge survives as the "
-    "residual shortcut, carried by the antimicrobial half of the "
-    "class and shared by the published state of the art, which misclassified "
-    "92.4% of 328 unseen fragments. It also shapes the output: the 412 "
-    "prioritised candidates average −0.79 in net charge against −0.11 across "
-    "their source pool. A six-arm ablation separates negative-class composition "
-    "from the length and charge distributions it carries. Length-matching a "
-    "published negative pool leaves its false-positive rate above 79%, whereas a "
-    "class matched on length and charge together reduces the charge signal to "
-    "chance for 0.018 in AUC. Two arms differing by 0.03 in AUC differ by 54 "
-    "points in false-positive rate, so test AUC is a poor guide to screen "
-    "behaviour. Docking inverts the same bias, cationic non-binders drawing two "
-    "thirds of their favourable score from electrostatics. Repeating the screen "
-    "under five fine-tuning seeds returns shortlists of 153 to 412 candidates "
-    "with only 111 common to all. Negative-class construction therefore warrants "
-    "the attention usually given to architecture; such shortlists should be "
-    "reported across seeds."),
+    "ABSTRACT: Classifiers for anti-diabetic peptides (ADPs) report high "
+    "benchmark accuracy yet misclassify most of the proteome fragments a real "
+    "screen returns. Holding the positives, hyperparameters and test set fixed "
+    "while varying only the negative class moved discrimination by 0.219 in AUC "
+    "and cut the false-positive rate on held-out proteome fragments from 93.3% "
+    "to 46.7%, whereas four architectures spanning a DoRA fine-tuned ESM-2 650M "
+    "model and a 20-feature composition baseline showed broadly comparable "
+    "performance. Net charge survives as the residual shortcut in this dataset, "
+    "appearing in the errors of the published state of the art and in the "
+    "composition of the 412 prioritised candidates, while a six-arm ablation "
+    "separating composition from length and charge found two negative classes "
+    "0.03 apart in AUC differing by 54 points in false-positive rate. "
+    "Negative-class construction therefore warrants the attention usually given "
+    "to architecture; a shortlist drawn from a parameter-efficient fine-tune "
+    "should be reported across seeds, since only 111 of these 412 candidates "
+    "survive all five."),
 
 # --- 2.1 positive class: provenance, not an evidence claim (his point 1) ----
 16: ("The positive class comprised the 966",
@@ -913,6 +903,25 @@ REPLACE = {
      "cheap: report the electrostatic share beside every score, include "
      "confidently rejected peptides in the panel and check the charge "
      "distribution of a shortlist against its source pool."),
+
+# --- Acknowledgment: ACS requires AI tool use to be disclosed here --------
+415: ("The authors acknowledge the University of York Viking",
+      "The authors acknowledge the University of York Viking research computing "
+      "cluster and the Research Computing team for GPU resources, and the "
+      "WeNMR/EOSC infrastructure for access to the HADDOCK 2.4 web server. "
+      "Anthropic's Claude was used to assist with manuscript preparation and "
+      "figure production."),
+
+# --- corresponding author details, supplied 23 October ---------------------
+2: ("\u2020Department of Chemistry",
+    "\u2020Department of Chemistry, \u2020\u2020 School of Physics, Engineering and "
+    "Technology, University of York, Heslington Lane, York YO10 5DD, United "
+    "Kingdom"),
+
+401: ("Manish Chauhan. School of Physics",
+      "Manish Chauhan. School of Physics, Engineering and Technology, University "
+      "of York, Heslington Lane, York YO10 5DD, United Kingdom. Email: "
+      "manish.chauhan@york.ac.uk"),
 
 # --- Table 5 caption: the corrected cap explanation (A6) ------------------
 312: ("Table 5. Negative-Class Ablation Separating Composition",
